@@ -10,5 +10,5 @@ python3 bootstrap.py \
   --gain auto \
   --fft-size 1024 \
   --frame-rate 20 \
-  --width 800 \
-  --height 480
+  --width 1366 \
+  --height 768
