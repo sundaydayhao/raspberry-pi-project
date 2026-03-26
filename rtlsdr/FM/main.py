@@ -222,7 +222,14 @@ class FMMonitorApp:
         self.sdr = RtlSdr(self.config.device_index)
         self.sdr.center_freq = self.config.center_freq_mhz * 1e6
         self.sdr.sample_rate = self.config.sample_rate
-        self.sdr.freq_correction = self.config.ppm
+        if self.config.ppm:
+            try:
+                self.sdr.freq_correction = self.config.ppm
+            except Exception as exc:
+                print(
+                    f"[WARN] Failed to apply frequency correction ({self.config.ppm} ppm): {exc}",
+                    file=sys.stderr,
+                )
         if self.config.gain == "auto":
             self.sdr.gain = "auto"
         else:

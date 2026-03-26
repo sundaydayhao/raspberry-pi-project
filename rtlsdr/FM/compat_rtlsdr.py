@@ -93,6 +93,9 @@ class RtlSdr:
     @freq_correction.setter
     def freq_correction(self, value: int) -> None:
         ppm = int(value)
+        if ppm == 0:
+            self._freq_correction = 0
+            return
         _check(_LIB.rtlsdr_set_freq_correction(self._dev, ppm), "rtlsdr_set_freq_correction")
         self._freq_correction = ppm
         self._buffer_reset = False
