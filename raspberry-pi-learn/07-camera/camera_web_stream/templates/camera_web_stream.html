@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📷 摄像头网页直播</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0f; color: #e0e0e0; min-height: 100vh; }
+        header { background: #0d1117; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        header h1 { color: #60a5fa; font-size: 1.3em; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; display: inline-block; margin-right: 6px; animation: blink 1.5s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .motion-badge { padding: 4px 12px; border-radius: 12px; font-size: 0.8em; font-weight: bold; }
+        .motion-on { background: rgba(239,68,68,0.3); color: #fca5a5; border: 1px solid #ef4444; animation: pulse 0.8s infinite; }
+        .motion-off { background: rgba(255,255,255,0.05); color: #64748b; border: 1px solid #374151; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .container { max-width: 1300px; margin: 0 auto; padding: 16px; display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+
+        /* 视频区域 */
+        .video-section { display: flex; flex-direction: column; gap: 12px; }
+        .video-wrapper { position: relative; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); }
+        .video-wrapper img { width: 100%; display: block; }
+        .video-overlay { position: absolute; top: 10px; left: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .overlay-badge { padding: 3px 10px; border-radius: 8px; font-size: 0.75em; font-weight: bold; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); }
+        .fps-badge { color: #4ade80; }
+        .res-badge { color: #60a5fa; }
+
+        /* 控制栏 */
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9em; font-weight: 600; transition: all 0.2s; }
+        .btn:hover { transform: scale(1.04); }
+        .btn-capture { background: #1d4ed8; color: white; }
+        .btn-motion { background: #374151; color: #d1d5db; }
+        .btn-motion.active { background: #7f1d1d; color: #fca5a5; }
+        .btn-face { background: #374151; color: #d1d5db; }
+        .btn-face.active { background: #14532d; color: #86efac; }
+        .btn-clear { background: #374151; color: #9ca3af; font-size: 0.8em; padding: 8px 14px; }
+
+        /* 调节滑块 */
+        .sliders { background: #0d1117; border-radius: 10px; padding: 14px; border: 1px solid rgba(255,255,255,0.06); }
+        .sliders h4 { color: #64748b; font-size: 0.85em; margin-bottom: 10px; }
+        .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .slider-row label { font-size: 0.8em; color: #94a3b8; min-width: 60px; }
+        .slider-row input[type=range] { flex: 1; accent-color: #60a5fa; }
+        .slider-row span { font-size: 0.8em; color: #60a5fa; min-width: 35px; text-align: right; }
+
+        /* 右侧面板 */
+        .side-panel { display: flex; flex-direction: column; gap: 12px; }
+        .panel-card { background: #0d1117; border-radius: 12px; padding: 14px; border: 1px solid rgba(255,255,255,0.06); }
+        .panel-card h3 { color: #64748b; font-size: 0.85em; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* 状态指标 */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .stat-item { text-align: center; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; }
+        .stat-item .sv { font-size: 1.5em; font-weight: bold; color: #60a5fa; }
+        .stat-item .sl { font-size: 0.7em; color: #475569; margin-top: 2px; }
+
+        /* 运动日志 */
+        .log-item { padding: 6px 10px; border-radius: 6px; margin-bottom: 5px; background: rgba(239,68,68,0.08); border-left: 2px solid #ef4444; font-size: 0.82em; display: flex; justify-content: space-between; }
+        .log-time { color: #f87171; }
+        .no-log { color: #374151; font-style: italic; font-size: 0.85em; text-align: center; padding: 10px; }
+
+        /* 照片画廊 */
+        .gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: 400px; overflow-y: auto; }
+        .gallery-grid::-webkit-scrollbar { width: 4px; }
+        .gallery-grid::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+        .gallery-item { position: relative; cursor: pointer; }
+        .gallery-item img { width: 100%; border-radius: 6px; display: block; transition: transform 0.2s; }
+        .gallery-item img:hover { transform: scale(1.03); }
+        .gallery-item .gi-time { font-size: 0.65em; color: #475569; text-align: center; margin-top: 2px; }
+        .gallery-item .gi-trigger { font-size: 0.6em; color: #60a5fa; text-align: center; }
+        .no-photo { color: #374151; font-style: italic; font-size: 0.85em; text-align: center; padding: 20px; grid-column: 1/-1; }
+
+        /* 全屏预览 */
+        .lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 1000; justify-content: center; align-items: center; }
+        .lightbox.show { display: flex; }
+        .lightbox img { max-width: 95vw; max-height: 90vh; border-radius: 8px; }
+        .lightbox-close { position: absolute; top: 16px; right: 20px; font-size: 2em; cursor: pointer; color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>📷 摄像头网页直播系统</h1>
+        <div style="display:flex;align-items:center;gap:12px">
+            <span><span class="status-dot"></span><span id="fps-text" style="font-size:0.85em;color:#4ade80">0 FPS</span></span>
+            <span class="motion-badge motion-off" id="motion-badge">运动：关</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- 左侧：视频 + 控制 -->
+        <div class="video-section">
+            <div class="video-wrapper">
+                <img src="/video_feed" alt="摄像头直播" id="video-stream">
+                <div class="video-overlay">
+                    <span class="overlay-badge fps-badge" id="fps-badge">0 FPS</span>
+                    <span class="overlay-badge res-badge" id="res-badge">--</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-capture" onclick="capture()">📷 拍照</button>
+                <button class="btn btn-motion" id="btn-motion" onclick="toggleMotion()">👁 运动检测：关</button>
+                <button class="btn btn-face" id="btn-face" onclick="toggleFace()">😊 人脸检测：关</button>
+                <button class="btn btn-clear" onclick="clearGallery()">🗑 清空画廊</button>
+            </div>
+
+            <div class="sliders">
+                <h4>🎛 画面调节</h4>
+                <div class="slider-row">
+                    <label>亮度</label>
+                    <input type="range" id="sl-brightness" min="-100" max="100" value="0" oninput="adjustBrightness(this.value)">
+                    <span id="val-brightness">0</span>
+                </div>
+                <div class="slider-row">
+                    <label>对比度</label>
+                    <input type="range" id="sl-contrast" min="50" max="200" value="100" oninput="adjustContrast(this.value)">
+                    <span id="val-contrast">1.0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：状态 + 日志 + 画廊 -->
+        <div class="side-panel">
+            <div class="panel-card">
+                <h3>📊 实时状态</h3>
+                <div class="stat-grid">
+                    <div class="stat-item"><div class="sv" id="st-fps">0</div><div class="sl">帧率 FPS</div></div>
+                    <div class="stat-item"><div class="sv" id="st-photos">0</div><div class="sl">已拍照片</div></div>
+                    <div class="stat-item"><div class="sv" id="st-motion" style="color:#ef4444">0</div><div class="sl">运动次数</div></div>
+                    <div class="stat-item"><div class="sv" id="st-res" style="font-size:0.9em;color:#a78bfa">--</div><div class="sl">分辨率</div></div>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <h3>🚨 运动检测日志</h3>
+                <div id="motion-log"><p class="no-log">暂无运动记录</p></div>
+            </div>
+
+            <div class="panel-card">
+                <h3>🖼 照片画廊（最近20张）</h3>
+                <div class="gallery-grid" id="gallery"><p class="no-photo">暂无照片</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全屏预览 -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <span class="lightbox-close">✕</span>
+        <img id="lightbox-img" src="" alt="">
+    </div>
+
+    <script>
+        async function fetchStatus() {
+            const d = await fetch('/api/status').then(r => r.json());
+            document.getElementById('fps-badge').textContent = d.fps + ' FPS';
+            document.getElementById('fps-text').textContent = d.fps + ' FPS';
+            document.getElementById('res-badge').textContent = d.resolution;
+            document.getElementById('st-fps').textContent = d.fps;
+            document.getElementById('st-photos').textContent = d.photo_count;
+            document.getElementById('st-motion').textContent = d.motion_count;
+            document.getElementById('st-res').textContent = d.resolution;
+
+            const mb = document.getElementById('motion-badge');
+            const bm = document.getElementById('btn-motion');
+            if (d.motion_alarm) {
+                mb.textContent = '⚠ 运动报警!'; mb.className = 'motion-badge motion-on';
+            } else if (d.motion_detect) {
+                mb.textContent = '运动：开'; mb.className = 'motion-badge motion-on';
+                bm.textContent = '👁 运动检测：开'; bm.className = 'btn btn-motion active';
+            } else {
+                mb.textContent = '运动：关'; mb.className = 'motion-badge motion-off';
+                bm.textContent = '👁 运动检测：关'; bm.className = 'btn btn-motion';
+            }
+
+            const bf = document.getElementById('btn-face');
+            if (d.face_detect) {
+                bf.textContent = '😊 人脸检测：开'; bf.className = 'btn btn-face active';
+            } else {
+                bf.textContent = '😊 人脸检测：关'; bf.className = 'btn btn-face';
+            }
+        }
+
+        async function fetchMotionLog() {
+            const logs = await fetch('/api/motion_log').then(r => r.json());
+            const div = document.getElementById('motion-log');
+            if (!logs.length) { div.innerHTML = '<p class="no-log">暂无运动记录</p>'; return; }
+            div.innerHTML = logs.map(l =>
+                `<div class="log-item"><span>${l.msg}</span><span class="log-time">${l.time}</span></div>`
+            ).join('');
+        }
+
+        async function fetchGallery() {
+            const photos = await fetch('/api/gallery').then(r => r.json());
+            const div = document.getElementById('gallery');
+            if (!photos.length) { div.innerHTML = '<p class="no-photo">暂无照片</p>'; return; }
+            div.innerHTML = photos.map(p =>
+                `<div class="gallery-item" onclick="viewPhoto('${p.data}')">
+                    <img src="data:image/jpeg;base64,${p.data}" alt="photo">
+                    <div class="gi-time">${p.time.slice(11)}</div>
+                    <div class="gi-trigger">${p.trigger}</div>
+                </div>`
+            ).join('');
+        }
+
+        async function capture() {
+            const d = await fetch('/api/capture', { method: 'POST' }).then(r => r.json());
+            if (d.success) { await fetchGallery(); await fetchStatus(); }
+            else alert(d.message);
+        }
+
+        async function toggleMotion() {
+            await fetch('/api/toggle_motion', { method: 'POST' });
+            await fetchStatus();
+        }
+
+        async function toggleFace() {
+            await fetch('/api/toggle_face', { method: 'POST' });
+            await fetchStatus();
+        }
+
+        async function clearGallery() {
+            if (confirm('确定清空所有照片？')) {
+                await fetch('/api/clear_gallery', { method: 'POST' });
+                await fetchGallery(); await fetchStatus();
+            }
+        }
+
+        let adjustTimer = null;
+        function adjustBrightness(v) {
+            document.getElementById('val-brightness').textContent = v;
+            clearTimeout(adjustTimer);
+            adjustTimer = setTimeout(() => fetch('/api/adjust', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ brightness: parseInt(v) })
+            }), 200);
+        }
+
+        function adjustContrast(v) {
+            const c = (v / 100).toFixed(1);
+            document.getElementById('val-contrast').textContent = c;
+            clearTimeout(adjustTimer);
+            adjustTimer = setTimeout(() => fetch('/api/adjust', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ contrast: parseFloat(c) })
+            }), 200);
+        }
+
+        function viewPhoto(data) {
+            document.getElementById('lightbox-img').src = 'data:image/jpeg;base64,' + data;
+            document.getElementById('lightbox').className = 'lightbox show';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').className = 'lightbox';
+        }
+
+        fetchStatus(); fetchMotionLog(); fetchGallery();
+        setInterval(fetchStatus, 1000);
+        setInterval(fetchMotionLog, 3000);
+        setInterval(fetchGallery, 5000);
+    </script>
+</body>
+</html>

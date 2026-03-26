@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🤖 AI/ML 智能仪表盘</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d1117; --card: #161b22; --border: #30363d;
+      --text: #e6edf3; --muted: #8b949e;
+      --green: #3fb950; --red: #f85149; --yellow: #d29922;
+      --blue: #58a6ff; --purple: #bc8cff; --orange: #ffa657;
+      --cyan: #39d353;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .header-title { display: flex; align-items: center; gap: 12px; }
+    .header-title h1 { font-size: 1.4rem; font-weight: 700; }
+    .header-title .badge {
+      background: #21262d; border: 1px solid var(--border);
+      border-radius: 20px; padding: 4px 12px; font-size: 0.75rem; color: var(--muted);
+    }
+    .header-stats { display: flex; gap: 20px; flex-wrap: wrap; }
+    .stat-item { text-align: center; }
+    .stat-item .val { font-size: 1.3rem; font-weight: 700; color: var(--blue); }
+    .stat-item .lbl { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; }
+
+    /* ── Layout ── */
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 1100px) { .grid-3 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 800px)  { .grid-3, .grid-2, .grid-4 { grid-template-columns: 1fr; } }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px; position: relative; overflow: hidden;
+    }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--blue), var(--purple));
+    }
+    .card.anomaly-card::before { background: linear-gradient(90deg, var(--red), var(--orange)); }
+    .card.gesture-card::before { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+    .card.classify-card::before { background: linear-gradient(90deg, var(--purple), var(--blue)); }
+    .card.voice-card::before { background: linear-gradient(90deg, var(--orange), var(--yellow)); }
+
+    .card-title {
+      font-size: 0.8rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title .icon { font-size: 1rem; }
+
+    /* ── Sensor Value Cards ── */
+    .sensor-val { font-size: 2.2rem; font-weight: 700; line-height: 1; }
+    .sensor-unit { font-size: 0.9rem; color: var(--muted); margin-left: 4px; }
+    .sensor-label { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+    .sensor-status { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 0.8rem; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot.normal { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot.anomaly { background: var(--red); box-shadow: 0 0 6px var(--red); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* ── Anomaly Banner ── */
+    .anomaly-banner {
+      display: none; background: rgba(248,81,73,0.15); border: 1px solid var(--red);
+      border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;
+      color: var(--red); font-weight: 600; text-align: center;
+      animation: flash 0.8s infinite;
+    }
+    .anomaly-banner.show { display: block; }
+    @keyframes flash { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    /* ── Progress Bar ── */
+    .progress-wrap { margin-top: 10px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; }
+    .progress-bar { height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+    .progress-fill.green { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+    .progress-fill.red   { background: linear-gradient(90deg, var(--red), var(--orange)); }
+    .progress-fill.blue  { background: linear-gradient(90deg, var(--blue), var(--purple)); }
+
+    /* ── Classification Results ── */
+    .classify-item {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+    }
+    .classify-label { width: 60px; font-size: 0.8rem; color: var(--text); flex-shrink: 0; }
+    .classify-bar-wrap { flex: 1; height: 18px; background: #21262d; border-radius: 4px; overflow: hidden; }
+    .classify-bar { height: 100%; border-radius: 4px; transition: width 0.6s ease;
+                    background: linear-gradient(90deg, var(--purple), var(--blue)); }
+    .classify-pct { width: 42px; text-align: right; font-size: 0.8rem; color: var(--muted); flex-shrink: 0; }
+    .classify-top { font-size: 1.6rem; font-weight: 700; color: var(--purple); margin-bottom: 4px; }
+    .classify-conf { font-size: 0.8rem; color: var(--muted); }
+
+    /* ── Gesture ── */
+    .gesture-display {
+      font-size: 3.5rem; text-align: center; padding: 16px 0;
+      transition: all 0.3s ease;
+    }
+    .gesture-name { text-align: center; font-size: 1rem; color: var(--green); font-weight: 600; }
+    .gesture-history { margin-top: 12px; }
+    .gesture-tag {
+      display: inline-block; background: #21262d; border: 1px solid var(--border);
+      border-radius: 12px; padding: 3px 10px; font-size: 0.75rem; margin: 2px;
+      color: var(--muted);
+    }
+
+    /* ── ML Libs Status ── */
+    .lib-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .lib-item {
+      display: flex; align-items: center; gap: 8px;
+      background: #21262d; border-radius: 8px; padding: 8px 12px;
+      font-size: 0.8rem;
+    }
+    .lib-ok   { color: var(--green); }
+    .lib-fail { color: var(--red); }
+
+    /* ── Chart ── */
+    .chart-wrap { position: relative; height: 180px; }
+
+    /* ── Anomaly Stats ── */
+    .anomaly-rate-big { font-size: 2.8rem; font-weight: 700; }
+    .anomaly-rate-big.safe   { color: var(--green); }
+    .anomaly-rate-big.warn   { color: var(--yellow); }
+    .anomaly-rate-big.danger { color: var(--red); }
+
+    /* ── Gesture Count Table ── */
+    .gesture-count-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem;
+    }
+    .gesture-count-row:last-child { border-bottom: none; }
+    .gesture-count-num { color: var(--blue); font-weight: 600; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 16px; color: var(--muted); font-size: 0.75rem;
+      border-top: 1px solid var(--border); margin-top: 8px;
+    }
+
+    /* ── Connection indicator ── */
+    .conn-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .conn-dot.connected    { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .conn-dot.disconnected { background: var(--red); }
+
+    /* ── Reset button ── */
+    .btn-reset {
+      background: #21262d; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+    .btn-reset:hover { border-color: var(--blue); color: var(--blue); }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="header-title">
+    <h1>🤖 AI/ML 智能仪表盘</h1>
+    <span class="badge">
+      <span class="conn-dot connected" id="connDot"></span>
+      <span id="connStatus">连接中...</span>
+    </span>
+    <span class="badge">算法: <strong id="detectorName">{{ detector_name }}</strong></span>
+  </div>
+  <div class="header-stats">
+    <div class="stat-item">
+      <div class="val" id="hdrTotal">0</div>
+      <div class="lbl">总样本</div>
+    </div>
+    <div class="stat-item">
+      <div class="val" id="hdrAnomalyCount" style="color:var(--red)">0</div>
+      <div class="lbl">异常数</div>
+    </div>
+    <div class="stat-item">
+      <div class="val" id="hdrRate" style="color:var(--yellow)">0%</div>
+      <div class="lbl">异常率</div>
+    </div>
+    <div class="stat-item">
+      <div class="val" id="hdrClassify" style="color:var(--purple)">0</div>
+      <div class="lbl">分类次数</div>
+    </div>
+    <button class="btn-reset" onclick="resetData()">🔄 重置</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ── 异常报警横幅 ── -->
+  <div class="anomaly-banner" id="anomalyBanner">
+    🚨 检测到传感器数据异常！请检查硬件状态
+  </div>
+
+  <!-- ── 传感器实时值 ── -->
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title"><span class="icon">🌡️</span> 温度</div>
+      <div>
+        <span class="sensor-val" id="tempVal">--</span>
+        <span class="sensor-unit">°C</span>
+      </div>
+      <div class="sensor-label">DHT11 温度传感器</div>
+      <div class="sensor-status">
+        <span class="dot normal" id="tempDot"></span>
+        <span id="tempStatus">正常</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">💧</span> 湿度</div>
+      <div>
+        <span class="sensor-val" id="humiVal">--</span>
+        <span class="sensor-unit">%</span>
+      </div>
+      <div class="sensor-label">DHT11 湿度传感器</div>
+      <div class="sensor-status">
+        <span class="dot normal" id="humiDot"></span>
+        <span id="humiStatus">正常</span>
+      </div>
+    </div>
+    <div class="card anomaly-card">
+      <div class="card-title"><span class="icon">🤖</span> 异常检测</div>
+      <div class="anomaly-rate-big safe" id="anomalyRateBig">0.0%</div>
+      <div class="sensor-label" style="margin-top:6px">异常率（<span id="detectorLabel">{{ detector_name }}</span>）</div>
+      <div class="progress-wrap" style="margin-top:12px">
+        <div class="progress-label">
+          <span>异常 <span id="anomalyCountLabel">0</span></span>
+          <span>总计 <span id="totalCountLabel">0</span></span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill red" id="anomalyProgressBar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 传感器趋势图 + 异常分布 ── -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span class="icon">📈</span> 温湿度趋势（含异常标注）</div>
+      <div class="chart-wrap">
+        <canvas id="sensorChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🔴</span> 气压趋势 &amp; 异常事件</div>
+      <div class="chart-wrap">
+        <canvas id="pressureChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 图像分类 + 手势识别 + ML库状态 ── -->
+  <div class="grid-3">
+
+    <!-- 图像分类 -->
+    <div class="card classify-card">
+      <div class="card-title"><span class="icon">🖼️</span> 图像分类（MobileNetV2）</div>
+      <div class="classify-top" id="classifyTop">--</div>
+      <div class="classify-conf" id="classifyConf">置信度: --</div>
+      <div style="margin-top:14px" id="classifyBars"></div>
+    </div>
+
+    <!-- 手势识别 -->
+    <div class="card gesture-card">
+      <div class="card-title"><span class="icon">✋</span> 手势识别（MediaPipe）</div>
+      <div class="gesture-display" id="gestureEmoji">🤚</div>
+      <div class="gesture-name" id="gestureName">等待检测...</div>
+      <div class="gesture-history" id="gestureHistory"></div>
+    </div>
+
+    <!-- ML 库状态 -->
+    <div class="card">
+      <div class="card-title"><span class="icon">⚙️</span> ML 环境状态</div>
+      <div class="lib-grid">
+        {% for lib, ok in ml_libs.items() %}
+        <div class="lib-item">
+          <span class="{{ 'lib-ok' if ok else 'lib-fail' }}">{{ '✅' if ok else '❌' }}</span>
+          <span>{{ lib }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div style="margin-top:16px">
+        <div class="card-title" style="margin-bottom:8px"><span class="icon">🎤</span> 手势统计</div>
+        <div id="gestureCountTable"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── 气压图 + 异常时间线 ── -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span class="icon">📊</span> 异常检测分数趋势</div>
+      <div class="chart-wrap">
+        <canvas id="scoreChart"></canvas>
+      </div>
+    </div>
+    <div class="card voice-card">
+      <div class="card-title"><span class="icon">🎤</span> 语音命令（模拟）</div>
+      <div id="voiceLog" style="font-size:0.82rem; max-height:160px; overflow-y:auto;"></div>
+      <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn-reset" onclick="simulateVoice('开灯')">💡 开灯</button>
+        <button class="btn-reset" onclick="simulateVoice('关灯')">🌑 关灯</button>
+        <button class="btn-reset" onclick="simulateVoice('报警')">🚨 报警</button>
+        <button class="btn-reset" onclick="simulateVoice('拍照')">📷 拍照</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  🤖 AI/ML 智能仪表盘 · 树莓派学习套件 · 端口 5007 ·
+  算法: <strong>{{ detector_name }}</strong> ·
+  <span id="footerTime">--</span>
+</footer>
+
+<script>
+// ── Socket.IO ──────────────────────────────────────────────────────────────
+const socket = io();
+const connDot    = document.getElementById('connDot');
+const connStatus = document.getElementById('connStatus');
+
+socket.on('connect', () => {
+  connDot.className = 'conn-dot connected';
+  connStatus.textContent = '已连接';
+});
+socket.on('disconnect', () => {
+  connDot.className = 'conn-dot disconnected';
+  connStatus.textContent = '已断开';
+});
+
+// ── Chart.js 初始化 ────────────────────────────────────────────────────────
+const MAX_POINTS = 60;
+const chartDefaults = {
+  responsive: true, maintainAspectRatio: false,
+  animation: { duration: 300 },
+  plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } },
+  scales: {
+    x: { ticks: { color: '#8b949e', maxTicksLimit: 8, font: { size: 10 } },
+         grid: { color: '#21262d' } },
+    y: { ticks: { color: '#8b949e', font: { size: 10 } },
+         grid: { color: '#21262d' } },
+  }
+};
+
+// 温湿度图
+const sensorCtx = document.getElementById('sensorChart').getContext('2d');
+const sensorChart = new Chart(sensorCtx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [
+      { label: '温度(°C)', data: [], borderColor: '#f85149', backgroundColor: 'rgba(248,81,73,0.1)',
+        borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true },
+      { label: '湿度(%)', data: [], borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.1)',
+        borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true, yAxisID: 'y2' },
+    ]
+  },
+  options: {
+    ...chartDefaults,
+    scales: {
+      ...chartDefaults.scales,
+      y:  { ...chartDefaults.scales.y, position: 'left',  title: { display: true, text: '温度(°C)', color: '#f85149', font:{size:10} } },
+      y2: { ...chartDefaults.scales.y, position: 'right', title: { display: true, text: '湿度(%)',  color: '#58a6ff', font:{size:10} }, grid: { drawOnChartArea: false } },
+    }
+  }
+});
+
+// 气压图
+const pressureCtx = document.getElementById('pressureChart').getContext('2d');
+const pressureChart = new Chart(pressureCtx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [
+      { label: '气压(hPa)', data: [], borderColor: '#bc8cff', backgroundColor: 'rgba(188,140,255,0.1)',
+        borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true },
+      { label: '异常事件', data: [], borderColor: '#f85149', backgroundColor: 'rgba(248,81,73,0.6)',
+        borderWidth: 0, pointRadius: 5, pointStyle: 'triangle', type: 'scatter', yAxisID: 'y2' },
+    ]
+  },
+  options: {
+    ...chartDefaults,
+    scales: {
+      ...chartDefaults.scales,
+      y:  { ...chartDefaults.scales.y, position: 'left' },
+      y2: { ...chartDefaults.scales.y, position: 'right', min: 0, max: 2, grid: { drawOnChartArea: false } },
+    }
+  }
+});
+
+// 异常分数图
+const scoreCtx = document.getElementById('scoreChart').getContext('2d');
+const scoreChart = new Chart(scoreCtx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [
+      { label: '异常分数', data: [], borderColor: '#d29922', backgroundColor: 'rgba(210,153,34,0.15)',
+        borderWidth: 2, pointRadius: 0, tension: 0.3, fill: true },
+    ]
+  },
+  options: {
+    ...chartDefaults,
+    scales: {
+      ...chartDefaults.scales,
+      y: { ...chartDefaults.scales.y, title: { display: true, text: '分数（越低越异常）', color: '#8b949e', font:{size:10} } }
+    }
+  }
+});
+
+function pushToChart(chart, label, ...values) {
+  chart.data.labels.push(label);
+  values.forEach((v, i) => chart.data.datasets[i].data.push(v));
+  if (chart.data.labels.length > MAX_POINTS) {
+    chart.data.labels.shift();
+    chart.data.datasets.forEach(ds => ds.data.shift());
+  }
+  chart.update('none');
+}
+
+// ── 数据更新 ───────────────────────────────────────────────────────────────
+let classifyCount = 0;
+
+socket.on('update', (data) => {
+  const s = data.sensor;
+  const isAnomaly = s.is_anomaly;
+
+  // 传感器值
+  document.getElementById('tempVal').textContent = s.temperature.toFixed(1);
+  document.getElementById('humiVal').textContent = s.humidity.toFixed(1);
+
+  // 异常状态
+  const tempDot    = document.getElementById('tempDot');
+  const humiDot    = document.getElementById('humiDot');
+  const tempStatus = document.getElementById('tempStatus');
+  const humiStatus = document.getElementById('humiStatus');
+  if (isAnomaly) {
+    tempDot.className = 'dot anomaly'; tempStatus.textContent = '⚠️ 异常';
+    humiDot.className = 'dot anomaly'; humiStatus.textContent = '⚠️ 异常';
+    document.getElementById('anomalyBanner').classList.add('show');
+    setTimeout(() => document.getElementById('anomalyBanner').classList.remove('show'), 4000);
+  } else {
+    tempDot.className = 'dot normal'; tempStatus.textContent = '正常';
+    humiDot.className = 'dot normal'; humiStatus.textContent = '正常';
+  }
+
+  // 异常率
+  const rate = data.anomaly_rate;
+  const rateBig = document.getElementById('anomalyRateBig');
+  rateBig.textContent = rate.toFixed(1) + '%';
+  rateBig.className = 'anomaly-rate-big ' + (rate < 5 ? 'safe' : rate < 15 ? 'warn' : 'danger');
+  document.getElementById('anomalyProgressBar').style.width = Math.min(rate * 3, 100) + '%';
+  document.getElementById('anomalyCountLabel').textContent = data.anomaly_count;
+  document.getElementById('totalCountLabel').textContent   = data.total_count;
+
+  // Header stats
+  document.getElementById('hdrTotal').textContent        = data.total_count;
+  document.getElementById('hdrAnomalyCount').textContent = data.anomaly_count;
+  document.getElementById('hdrRate').textContent         = rate.toFixed(1) + '%';
+
+  // 图表
+  pushToChart(sensorChart, s.time, s.temperature, s.humidity);
+  pushToChart(pressureChart, s.time, s.pressure, isAnomaly ? s.pressure : null);
+  if (s.score !== 0) pushToChart(scoreChart, s.time, s.score);
+
+  // 图像分类
+  if (data.classification && data.classification.length > 0) {
+    classifyCount++;
+    document.getElementById('hdrClassify').textContent = classifyCount;
+    const top = data.classification[0];
+    document.getElementById('classifyTop').textContent = top.label;
+    document.getElementById('classifyConf').textContent = `置信度: ${top.confidence.toFixed(1)}%`;
+    const barsEl = document.getElementById('classifyBars');
+    barsEl.innerHTML = data.classification.map(item => `
+      <div class="classify-item">
+        <span class="classify-label">${item.label}</span>
+        <div class="classify-bar-wrap">
+          <div class="classify-bar" style="width:${item.confidence}%"></div>
+        </div>
+        <span class="classify-pct">${item.confidence.toFixed(1)}%</span>
+      </div>
+    `).join('');
+  }
+
+  // 手势识别
+  if (data.gesture && data.gesture !== '无') {
+    const emojiMap = {
+      '✊ 握拳': '✊', '✋ 张开': '✋', '☝ 一指': '☝',
+      '✌ 剪刀': '✌', '👍 点赞': '👍', '🤙 打电话': '🤙'
+    };
+    const emoji = emojiMap[data.gesture] || '🤚';
+    document.getElementById('gestureEmoji').textContent = emoji;
+    document.getElementById('gestureName').textContent  = data.gesture;
+  }
+
+  // 手势历史标签
+  if (data.gesture_counts) {
+    const entries = Object.entries(data.gesture_counts)
+      .sort((a, b) => b[1] - a[1]).slice(0, 6);
+    document.getElementById('gestureCountTable').innerHTML = entries.map(([g, c]) => `
+      <div class="gesture-count-row">
+        <span>${g}</span>
+        <span class="gesture-count-num">${c}</span>
+      </div>
+    `).join('');
+  }
+
+  // 时间
+  document.getElementById('footerTime').textContent = new Date().toLocaleTimeString('zh-CN');
+});
+
+// ── 初始化历史数据 ─────────────────────────────────────────────────────────
+socket.on('init', (data) => {
+  if (data.history && data.history.length > 0) {
+    data.history.forEach(s => {
+      pushToChart(sensorChart, s.time, s.temperature, s.humidity);
+      pushToChart(pressureChart, s.time, s.pressure, s.is_anomaly ? s.pressure : null);
+      if (s.score !== 0) pushToChart(scoreChart, s.time, s.score);
+    });
+  }
+});
+
+// ── 重置数据 ───────────────────────────────────────────────────────────────
+function resetData() {
+  fetch('/api/reset', { method: 'POST' }).then(() => {
+    sensorChart.data.labels = [];
+    sensorChart.data.datasets.forEach(ds => ds.data = []);
+    sensorChart.update();
+    pressureChart.data.labels = [];
+    pressureChart.data.datasets.forEach(ds => ds.data = []);
+    pressureChart.update();
+    scoreChart.data.labels = [];
+    scoreChart.data.datasets.forEach(ds => ds.data = []);
+    scoreChart.update();
+    document.getElementById('hdrTotal').textContent = '0';
+    document.getElementById('hdrAnomalyCount').textContent = '0';
+    document.getElementById('hdrRate').textContent = '0%';
+    document.getElementById('anomalyRateBig').textContent = '0.0%';
+    document.getElementById('gestureCountTable').innerHTML = '';
+    classifyCount = 0;
+    document.getElementById('hdrClassify').textContent = '0';
+  });
+}
+
+// ── 模拟语音命令 ───────────────────────────────────────────────────────────
+const voiceActions = {
+  '开灯':  { gpio: 'GPIO17', action: '打开 LED', icon: '💡' },
+  '关灯':  { gpio: 'GPIO17', action: '关闭 LED', icon: '🌑' },
+  '报警':  { gpio: 'GPIO18', action: '蜂鸣器响', icon: '🚨' },
+  '拍照':  { gpio: '摄像头', action: '拍照',     icon: '📷' },
+};
+
+function simulateVoice(cmd) {
+  const info = voiceActions[cmd] || { gpio: '--', action: cmd, icon: '🎤' };
+  const log = document.getElementById('voiceLog');
+  const time = new Date().toLocaleTimeString('zh-CN');
+  const entry = document.createElement('div');
+  entry.style.cssText = 'padding:4px 0; border-bottom:1px solid #21262d; color:#e6edf3;';
+  entry.innerHTML = `<span style="color:#8b949e">${time}</span> ${info.icon} 「${cmd}」→ ${info.gpio} <span style="color:#3fb950">${info.action}</span>`;
+  log.insertBefore(entry, log.firstChild);
+  if (log.children.length > 10) log.removeChild(log.lastChild);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏠 智能家居环境监测站</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+        header {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        header h1 { font-size: 1.8em; color: #64b5f6; }
+        header p { color: #90a4ae; font-size: 0.9em; margin-top: 4px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        /* 报警横幅 */
+        .alerts { margin-bottom: 15px; }
+        .alert {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-weight: bold;
+            animation: pulse 1s infinite;
+        }
+        .alert.danger { background: rgba(244,67,54,0.3); border: 1px solid #f44336; color: #ff8a80; }
+        .alert.warning { background: rgba(255,152,0,0.3); border: 1px solid #ff9800; color: #ffcc80; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+
+        /* 数据卡片 */
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .card {
+            background: rgba(255,255,255,0.07);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-3px); }
+        .card .icon { font-size: 2.5em; margin-bottom: 8px; }
+        .card .label { font-size: 0.85em; color: #90a4ae; margin-bottom: 5px; }
+        .card .value { font-size: 2em; font-weight: bold; }
+        .card .unit { font-size: 0.9em; color: #90a4ae; }
+        .card.temp .value { color: #ff7043; }
+        .card.humi .value { color: #42a5f5; }
+        .card.pres .value { color: #66bb6a; }
+        .card.gas .value { color: #ef5350; }
+        .card.motion .value { color: #ab47bc; }
+        .card.status-ok { border-color: rgba(76,175,80,0.4); }
+        .card.status-alarm { border-color: rgba(244,67,54,0.6); animation: pulse 1s infinite; }
+
+        /* 图表区域 */
+        .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .chart-card {
+            background: rgba(255,255,255,0.07);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .chart-card h3 { margin-bottom: 15px; color: #90caf9; font-size: 1em; }
+        .chart-card canvas { max-height: 200px; }
+
+        /* 运动日志 */
+        .log-card {
+            background: rgba(255,255,255,0.07);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+        .log-card h3 { margin-bottom: 12px; color: #90caf9; }
+        .log-item {
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            background: rgba(171,71,188,0.15);
+            border-left: 3px solid #ab47bc;
+            font-size: 0.9em;
+        }
+        .log-item .time { color: #ce93d8; font-size: 0.85em; }
+        .no-log { color: #546e7a; font-style: italic; }
+
+        /* 状态栏 */
+        .status-bar {
+            text-align: center;
+            color: #546e7a;
+            font-size: 0.85em;
+            padding: 10px;
+        }
+        #last-update { color: #78909c; }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.3em; }
+            .card .value { font-size: 1.6em; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🏠 智能家居环境监测站</h1>
+        <p>Raspberry Pi IoT 实时环境监测 | 自动刷新间隔：3秒</p>
+    </header>
+    <div class="container">
+        <!-- 报警区域 -->
+        <div class="alerts" id="alerts"></div>
+
+        <!-- 数据卡片 -->
+        <div class="cards">
+            <div class="card temp" id="card-temp">
+                <div class="icon">🌡️</div>
+                <div class="label">室内温度</div>
+                <div class="value" id="val-temp">--</div>
+                <div class="unit">°C</div>
+            </div>
+            <div class="card humi" id="card-humi">
+                <div class="icon">💧</div>
+                <div class="label">相对湿度</div>
+                <div class="value" id="val-humi">--</div>
+                <div class="unit">%RH</div>
+            </div>
+            <div class="card pres" id="card-pres">
+                <div class="icon">🌬️</div>
+                <div class="label">大气压强</div>
+                <div class="value" id="val-pres">--</div>
+                <div class="unit">hPa</div>
+            </div>
+            <div class="card gas status-ok" id="card-gas">
+                <div class="icon">🔥</div>
+                <div class="label">烟雾/气体</div>
+                <div class="value" id="val-gas">正常</div>
+                <div class="unit">MQ-2</div>
+            </div>
+            <div class="card motion" id="card-motion">
+                <div class="icon">👤</div>
+                <div class="label">人体感应</div>
+                <div class="value" id="val-motion">无</div>
+                <div class="unit">PIR</div>
+            </div>
+        </div>
+
+        <!-- 图表 -->
+        <div class="charts">
+            <div class="chart-card">
+                <h3>📈 温度趋势（近100次采样）</h3>
+                <canvas id="chart-temp"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>📈 湿度趋势（近100次采样）</h3>
+                <canvas id="chart-humi"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>📈 气压趋势（近100次采样）</h3>
+                <canvas id="chart-pres"></canvas>
+            </div>
+        </div>
+
+        <!-- 运动日志 -->
+        <div class="log-card">
+            <h3>👤 运动检测日志（最近20条）</h3>
+            <div id="motion-log"><p class="no-log">暂无运动记录</p></div>
+        </div>
+
+        <div class="status-bar">
+            最后更新：<span id="last-update">--</span> |
+            树莓派 IoT 环境监测系统 v1.0
+        </div>
+    </div>
+
+    <script>
+        // 图表配置
+        const chartDefaults = {
+            type: 'line',
+            options: {
+                responsive: true,
+                animation: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#78909c', maxTicksLimit: 8 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    y: { ticks: { color: '#78909c' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                }
+            }
+        };
+
+        function makeChart(id, color, label) {
+            return new Chart(document.getElementById(id), {
+                ...chartDefaults,
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: label,
+                        data: [],
+                        borderColor: color,
+                        backgroundColor: color + '22',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 2
+                    }]
+                }
+            });
+        }
+
+        const chartTemp = makeChart('chart-temp', '#ff7043', '温度(°C)');
+        const chartHumi = makeChart('chart-humi', '#42a5f5', '湿度(%)');
+        const chartPres = makeChart('chart-pres', '#66bb6a', '气压(hPa)');
+
+        function updateCharts(history) {
+            [chartTemp, chartHumi, chartPres].forEach(c => {
+                c.data.labels = history.timestamps;
+            });
+            chartTemp.data.datasets[0].data = history.temperature;
+            chartHumi.data.datasets[0].data = history.humidity;
+            chartPres.data.datasets[0].data = history.pressure;
+            [chartTemp, chartHumi, chartPres].forEach(c => c.update());
+        }
+
+        async function fetchData() {
+            try {
+                const res = await fetch('/api/data');
+                const d = await res.json();
+
+                document.getElementById('val-temp').textContent = d.temperature.toFixed(1);
+                document.getElementById('val-humi').textContent = d.humidity.toFixed(1);
+                document.getElementById('val-pres').textContent = d.pressure.toFixed(1);
+
+                const gasCard = document.getElementById('card-gas');
+                const gasVal = document.getElementById('val-gas');
+                if (d.gas_alarm) {
+                    gasVal.textContent = '报警!';
+                    gasCard.className = 'card gas status-alarm';
+                } else {
+                    gasVal.textContent = '正常';
+                    gasCard.className = 'card gas status-ok';
+                }
+
+                const motionVal = document.getElementById('val-motion');
+                motionVal.textContent = d.motion ? '检测到!' : '无';
+
+                const alertsDiv = document.getElementById('alerts');
+                alertsDiv.innerHTML = d.alerts.map(a =>
+                    `<div class="alert ${a.type}">${a.msg}</div>`
+                ).join('');
+
+                document.getElementById('last-update').textContent = d.timestamp;
+            } catch(e) { console.error('数据获取失败:', e); }
+        }
+
+        async function fetchHistory() {
+            try {
+                const res = await fetch('/api/history');
+                const h = await res.json();
+                updateCharts(h);
+            } catch(e) { console.error('历史数据获取失败:', e); }
+        }
+
+        async function fetchMotionLog() {
+            try {
+                const res = await fetch('/api/motion_log');
+                const logs = await res.json();
+                const div = document.getElementById('motion-log');
+                if (logs.length === 0) {
+                    div.innerHTML = '<p class="no-log">暂无运动记录</p>';
+                } else {
+                    div.innerHTML = logs.map(l =>
+                        `<div class="log-item"><span class="time">${l.time}</span> — ${l.msg}</div>`
+                    ).join('');
+                }
+            } catch(e) {}
+        }
+
+        fetchData();
+        fetchHistory();
+        fetchMotionLog();
+        setInterval(fetchData, 3000);
+        setInterval(fetchHistory, 5000);
+        setInterval(fetchMotionLog, 10000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 网页音频控制中心</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a14; color: #e0e0e0; min-height: 100vh; }
+        header { background: linear-gradient(90deg, #1a0533, #0d1b2a); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(139,92,246,0.3); }
+        header h1 { color: #a78bfa; font-size: 1.3em; }
+        .now-playing { font-size: 0.85em; color: #7c3aed; display: flex; align-items: center; gap: 6px; }
+        .eq-bar { display: inline-flex; gap: 2px; align-items: flex-end; height: 16px; }
+        .eq-bar span { width: 3px; background: #a78bfa; border-radius: 1px; animation: eq 0.6s infinite alternate; }
+        .eq-bar span:nth-child(1) { height: 6px; animation-delay: 0s; }
+        .eq-bar span:nth-child(2) { height: 12px; animation-delay: 0.1s; }
+        .eq-bar span:nth-child(3) { height: 8px; animation-delay: 0.2s; }
+        .eq-bar span:nth-child(4) { height: 14px; animation-delay: 0.15s; }
+        .eq-bar span:nth-child(5) { height: 5px; animation-delay: 0.05s; }
+        @keyframes eq { from{transform:scaleY(0.3)} to{transform:scaleY(1)} }
+        .eq-bar.paused span { animation-play-state: paused; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 800px) { .container { grid-template-columns: 1fr; } }
+
+        .card { background: #0d1117; border-radius: 14px; padding: 18px; border: 1px solid rgba(255,255,255,0.07); }
+        .card h3 { color: #7c3aed; font-size: 0.9em; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
+
+        /* 播放器 */
+        .player-card { grid-column: 1 / -1; }
+        .player-display { background: linear-gradient(135deg, #1a0533, #0d1b2a); border-radius: 12px; padding: 20px; margin-bottom: 16px; text-align: center; border: 1px solid rgba(139,92,246,0.2); }
+        .player-title { font-size: 1.2em; font-weight: bold; color: #c4b5fd; margin-bottom: 6px; min-height: 1.5em; }
+        .player-status { font-size: 0.85em; color: #6d28d9; }
+        .player-status.playing { color: #a78bfa; }
+        .player-status.recording { color: #ef4444; }
+        .player-status.tts { color: #34d399; }
+        .player-status.buzzer { color: #fbbf24; }
+
+        .waveform { height: 50px; display: flex; align-items: center; justify-content: center; gap: 2px; margin: 12px 0; }
+        .wave-bar { width: 4px; background: #7c3aed; border-radius: 2px; transition: height 0.1s; }
+
+        .volume-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+        .volume-row label { font-size: 0.85em; color: #6d28d9; min-width: 50px; }
+        .volume-row input[type=range] { flex: 1; accent-color: #a78bfa; }
+        .volume-row span { font-size: 0.85em; color: #a78bfa; min-width: 35px; text-align: right; }
+
+        .player-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9em; font-weight: 600; transition: all 0.2s; }
+        .btn:hover { transform: scale(1.05); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .btn-stop { background: #7f1d1d; color: #fca5a5; }
+        .btn-primary { background: #5b21b6; color: #e9d5ff; }
+        .btn-green { background: #14532d; color: #86efac; }
+        .btn-yellow { background: #78350f; color: #fde68a; }
+        .btn-red { background: #7f1d1d; color: #fca5a5; }
+        .btn-sm { padding: 6px 14px; font-size: 0.8em; }
+
+        /* 播放列表 */
+        .playlist { max-height: 280px; overflow-y: auto; }
+        .playlist::-webkit-scrollbar { width: 4px; }
+        .playlist::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+        .playlist-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s; }
+        .playlist-item:hover { background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.3); }
+        .playlist-item.active { background: rgba(139,92,246,0.2); border-color: #7c3aed; }
+        .pi-name { font-size: 0.9em; color: #c4b5fd; flex: 1; }
+        .pi-size { font-size: 0.75em; color: #4b5563; margin: 0 10px; }
+        .pi-del { background: none; border: none; color: #4b5563; cursor: pointer; font-size: 1em; padding: 2px 6px; border-radius: 4px; }
+        .pi-del:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+        .no-files { color: #374151; font-style: italic; text-align: center; padding: 20px; font-size: 0.85em; }
+
+        /* 上传 */
+        .upload-area { border: 2px dashed rgba(139,92,246,0.3); border-radius: 10px; padding: 16px; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+        .upload-area:hover { border-color: #7c3aed; }
+        .upload-area input { display: none; }
+        .upload-area p { color: #6d28d9; font-size: 0.85em; }
+
+        /* TTS */
+        .tts-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; color: #e0e0e0; font-size: 0.9em; resize: vertical; min-height: 80px; margin-bottom: 10px; }
+        .tts-input:focus { outline: none; border-color: #7c3aed; }
+        .tts-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .lang-select { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 12px; color: #e0e0e0; font-size: 0.85em; }
+
+        /* 蜂鸣器 */
+        .song-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+        .song-btn { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.2); border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s; color: #fde68a; font-size: 0.85em; }
+        .song-btn:hover { background: rgba(251,191,36,0.2); border-color: #fbbf24; transform: scale(1.03); }
+        .song-btn.playing { background: rgba(251,191,36,0.3); border-color: #f59e0b; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+        /* 录音 */
+        .record-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+        .dur-select { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 12px; color: #e0e0e0; font-size: 0.85em; }
+        .rec-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85em; color: #ef4444; }
+        .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; animation: blink 0.8s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+        .recordings-list { max-height: 180px; overflow-y: auto; }
+        .rec-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 6px; margin-bottom: 5px; background: rgba(239,68,68,0.06); border-left: 2px solid #ef4444; font-size: 0.82em; }
+        .rec-name { color: #fca5a5; flex: 1; }
+        .rec-size { color: #4b5563; margin: 0 8px; }
+
+        /* 日志 */
+        .log-list { max-height: 200px; overflow-y: auto; }
+        .log-item { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 5px; margin-bottom: 4px; background: rgba(255,255,255,0.03); font-size: 0.82em; }
+        .log-action { color: #c4b5fd; }
+        .log-time { color: #4b5563; }
+        .no-log { color: #374151; font-style: italic; text-align: center; padding: 10px; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🎵 网页音频控制中心</h1>
+        <div class="now-playing">
+            <div class="eq-bar paused" id="eq-bar">
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <span id="now-playing-text">待机</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- 播放器主控 -->
+        <div class="card player-card">
+            <h3>🎛 播放控制</h3>
+            <div class="player-display">
+                <div class="player-title" id="player-title">未选择文件</div>
+                <div class="player-status" id="player-status">待机</div>
+                <div class="waveform" id="waveform"></div>
+                <div class="volume-row">
+                    <label>🔊 音量</label>
+                    <input type="range" id="vol-slider" min="0" max="100" value="70" oninput="setVolume(this.value)">
+                    <span id="vol-val">70%</span>
+                </div>
+            </div>
+            <div class="player-btns">
+                <button class="btn btn-stop" onclick="stopAll()">⏹ 停止</button>
+            </div>
+        </div>
+
+        <!-- 播放列表 -->
+        <div class="card">
+            <h3>📂 音频文件列表</h3>
+            <div class="playlist" id="playlist"><p class="no-files">暂无音频文件，请上传</p></div>
+            <div class="upload-area" onclick="document.getElementById('file-input').click()" style="margin-top:12px">
+                <input type="file" id="file-input" accept=".mp3,.wav,.ogg,.flac,.m4a" onchange="uploadFile(this)">
+                <p>📁 点击上传音频文件（MP3/WAV/OGG/FLAC）</p>
+            </div>
+        </div>
+
+        <!-- 文字转语音 -->
+        <div class="card">
+            <h3>🔊 文字转语音 (TTS)</h3>
+            <textarea class="tts-input" id="tts-text" placeholder="输入要朗读的文字...&#10;例如：你好，欢迎使用树莓派音频控制中心！"></textarea>
+            <div class="tts-row">
+                <select class="lang-select" id="tts-lang">
+                    <option value="zh">中文</option>
+                    <option value="en">English</option>
+                </select>
+                <button class="btn btn-green" onclick="speakTTS()">🔊 朗读</button>
+            </div>
+        </div>
+
+        <!-- 蜂鸣器音乐 -->
+        <div class="card">
+            <h3>🎵 蜂鸣器音乐</h3>
+            <div class="song-grid" id="song-grid">
+                {% for song in songs %}
+                <div class="song-btn" id="song-{{ loop.index }}" onclick="playSong('{{ song }}')">🎵 {{ song }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 录音 -->
+        <div class="card">
+            <h3>🎙 录音控制</h3>
+            <div class="record-controls">
+                <select class="dur-select" id="rec-duration">
+                    <option value="5">5秒</option>
+                    <option value="10" selected>10秒</option>
+                    <option value="30">30秒</option>
+                    <option value="60">60秒</option>
+                </select>
+                <button class="btn btn-red" onclick="startRecord()">🎙 开始录音</button>
+                <div class="rec-indicator" id="rec-indicator" style="display:none">
+                    <div class="rec-dot"></div> 录音中...
+                </div>
+            </div>
+            <div class="recordings-list" id="recordings-list"><p class="no-log">暂无录音</p></div>
+        </div>
+
+        <!-- 操作日志 -->
+        <div class="card">
+            <h3>📋 操作日志</h3>
+            <div class="log-list" id="log-list"><p class="no-log">暂无记录</p></div>
+        </div>
+    </div>
+
+    <script>
+        // 生成波形条
+        const waveform = document.getElementById('waveform');
+        for (let i = 0; i < 40; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'wave-bar';
+            bar.style.height = '4px';
+            waveform.appendChild(bar);
+        }
+
+        function animateWaveform(active) {
+            const bars = waveform.querySelectorAll('.wave-bar');
+            if (active) {
+                bars.forEach(b => {
+                    const h = Math.random() * 40 + 4;
+                    b.style.height = h + 'px';
+                    b.style.background = `hsl(${260 + Math.random()*40}, 70%, 60%)`;
+                });
+            } else {
+                bars.forEach(b => { b.style.height = '4px'; b.style.background = '#7c3aed'; });
+            }
+        }
+
+        let waveTimer = null;
+        function startWave() {
+            if (waveTimer) return;
+            waveTimer = setInterval(() => animateWaveform(true), 100);
+            document.getElementById('eq-bar').classList.remove('paused');
+        }
+        function stopWave() {
+            clearInterval(waveTimer); waveTimer = null;
+            animateWaveform(false);
+            document.getElementById('eq-bar').classList.add('paused');
+        }
+
+        async function fetchStatus() {
+            const d = await fetch('/api/status').then(r => r.json());
+            const titleEl = document.getElementById('player-title');
+            const statusEl = document.getElementById('player-status');
+            const nowEl = document.getElementById('now-playing-text');
+
+            if (d.playing) {
+                titleEl.textContent = d.current_file || '播放中';
+                statusEl.textContent = '▶ 播放中'; statusEl.className = 'player-status playing';
+                nowEl.textContent = d.current_file || '播放中';
+                startWave();
+            } else if (d.tts_speaking) {
+                titleEl.textContent = '文字转语音';
+                statusEl.textContent = '🔊 朗读中'; statusEl.className = 'player-status tts';
+                nowEl.textContent = 'TTS朗读中';
+                startWave();
+            } else if (d.buzzer_playing) {
+                titleEl.textContent = d.buzzer_song;
+                statusEl.textContent = '🎵 蜂鸣器演奏中'; statusEl.className = 'player-status buzzer';
+                nowEl.textContent = d.buzzer_song;
+                startWave();
+            } else if (d.recording) {
+                titleEl.textContent = '录音中...';
+                statusEl.textContent = '🎙 录音中'; statusEl.className = 'player-status recording';
+                nowEl.textContent = '录音中';
+                document.getElementById('rec-indicator').style.display = 'flex';
+                startWave();
+            } else {
+                titleEl.textContent = '待机';
+                statusEl.textContent = '⏹ 待机'; statusEl.className = 'player-status';
+                nowEl.textContent = '待机';
+                document.getElementById('rec-indicator').style.display = 'none';
+                stopWave();
+            }
+
+            // 更新播放列表
+            const pl = document.getElementById('playlist');
+            if (!d.audio_files.length) {
+                pl.innerHTML = '<p class="no-files">暂无音频文件，请上传</p>';
+            } else {
+                pl.innerHTML = d.audio_files.map(f => `
+                    <div class="playlist-item ${d.current_file === f.name ? 'active' : ''}" onclick="playFile('${f.name}')">
+                        <span class="pi-name">🎵 ${f.name}</span>
+                        <span class="pi-size">${f.size}</span>
+                        <button class="pi-del" onclick="event.stopPropagation();deleteFile('${f.name}')">✕</button>
+                    </div>`).join('');
+            }
+
+            // 蜂鸣器按钮状态
+            document.querySelectorAll('.song-btn').forEach(btn => {
+                btn.className = 'song-btn' + (d.buzzer_playing && d.buzzer_song === btn.textContent.trim().slice(2) ? ' playing' : '');
+            });
+        }
+
+        async function fetchRecordings() {
+            const recs = await fetch('/api/recordings').then(r => r.json());
+            const div = document.getElementById('recordings-list');
+            if (!recs.length) { div.innerHTML = '<p class="no-log">暂无录音</p>'; return; }
+            div.innerHTML = recs.map(r => `
+                <div class="rec-item">
+                    <span class="rec-name" onclick="playRecording('${r.name}')" style="cursor:pointer">▶ ${r.name}</span>
+                    <span class="rec-size">${r.size}</span>
+                </div>`).join('');
+        }
+
+        async function fetchLog() {
+            const logs = await fetch('/api/log').then(r => r.json());
+            const div = document.getElementById('log-list');
+            if (!logs.length) { div.innerHTML = '<p class="no-log">暂无记录</p>'; return; }
+            div.innerHTML = logs.map(l =>
+                `<div class="log-item"><span class="log-action">${l.action}</span><span class="log-time">${l.time}</span></div>`
+            ).join('');
+        }
+
+        async function playFile(name) {
+            await fetch('/api/play', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({filename: name}) });
+        }
+
+        async function stopAll() {
+            await fetch('/api/stop', { method: 'POST' });
+        }
+
+        async function setVolume(v) {
+            document.getElementById('vol-val').textContent = v + '%';
+            await fetch('/api/volume', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({volume: parseInt(v)}) });
+        }
+
+        async function speakTTS() {
+            const text = document.getElementById('tts-text').value.trim();
+            const lang = document.getElementById('tts-lang').value;
+            if (!text) { alert('请输入文字'); return; }
+            await fetch('/api/tts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text, lang}) });
+        }
+
+        async function playSong(name) {
+            await fetch('/api/buzzer', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({song: name}) });
+        }
+
+        async function startRecord() {
+            const dur = document.getElementById('rec-duration').value;
+            await fetch('/api/record', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({duration: parseInt(dur)}) });
+        }
+
+        async function playRecording(name) {
+            await fetch('/api/play_recording', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({filename: name}) });
+        }
+
+        async function uploadFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const fd = new FormData();
+            fd.append('file', file);
+            const d = await fetch('/api/upload', { method: 'POST', body: fd }).then(r => r.json());
+            alert(d.message);
+            input.value = '';
+        }
+
+        async function deleteFile(name) {
+            if (!confirm(`确定删除 ${name}？`)) return;
+            await fetch('/api/delete', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({filename: name}) });
+        }
+
+        fetchStatus(); fetchRecordings(); fetchLog();
+        setInterval(fetchStatus, 1500);
+        setInterval(fetchRecordings, 5000);
+        setInterval(fetchLog, 3000);
+    </script>
+</body>
+</html>
