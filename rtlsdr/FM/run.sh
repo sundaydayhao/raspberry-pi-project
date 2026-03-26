@@ -4,7 +4,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-python3 main.py \
+python3 bootstrap.py \
   --freq 98.0 \
   --sample-rate 2400000 \
   --gain auto \
