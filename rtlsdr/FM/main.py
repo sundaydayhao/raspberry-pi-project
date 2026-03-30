@@ -22,6 +22,7 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
 import os
 import signal
 import sys
@@ -32,13 +33,65 @@ from typing import Optional, Tuple
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+class _MissingRtlSdrSymbol:
+    def __init__(self, name: str) -> None:
+        self.__name__ = name
+        self.argtypes = []
+        self.restype = ctypes.c_int
+
+    def __call__(self, *args: object) -> int:
+        return 0
+
+
+def _load_rtlsdr() -> type:
+    try:
+        from rtlsdr import RtlSdr as imported_rtlsdr
+        return imported_rtlsdr
+    except ImportError as exc:
+        raise SystemExit(
+            "缂哄皯 pyrtlsdr 渚濊禆锛岃鍏堝畨瑁咃細pip install pyrtlsdr numpy pillow pygame"
+        ) from exc
+    except AttributeError as exc:
+        if "rtlsdr_set_dithering" not in str(exc):
+            raise SystemExit(f"鍔犺浇 pyrtlsdr 澶辫触: {exc}") from exc
+
+        original_getattr = ctypes.CDLL.__getattr__
+
+        def _compat_getattr(self: ctypes.CDLL, name: str):
+            try:
+                return original_getattr(self, name)
+            except AttributeError:
+                library_name = getattr(self, "_name", "")
+                if name == "rtlsdr_set_dithering" and isinstance(library_name, str) and "librtlsdr" in library_name:
+                    return _MissingRtlSdrSymbol(name)
+                raise
+
+        ctypes.CDLL.__getattr__ = _compat_getattr
+        for module_name in list(sys.modules):
+            if module_name == "rtlsdr" or module_name.startswith("rtlsdr."):
+                sys.modules.pop(module_name, None)
+
+        try:
+            print(
+                "[WARN] librtlsdr 缂哄皯 rtlsdr_set_dithering锛屽凡鍚敤鍏煎瀵煎叆銆?",
+                file=sys.stderr,
+            )
+            from rtlsdr import RtlSdr as imported_rtlsdr
+            return imported_rtlsdr
+        except Exception as retry_exc:
+            raise SystemExit(
+                "绯荤粺 librtlsdr 杩囨棫锛屽苟涓旇嚜鍔ㄥ吋瀹瑰け璐ャ€?璇峰崌绾?librtlsdr锛屾垨闄嶇骇 pyrtlsdr銆?"
+            ) from retry_exc
+        finally:
+            ctypes.CDLL.__getattr__ = original_getattr
+
 try:
     import pygame
 except ImportError as exc:
     raise SystemExit("缺少 pygame 依赖，请先安装：pip install pygame") from exc
 
 try:
-    from rtlsdr import RtlSdr
+    RtlSdr = _load_rtlsdr()
 except ImportError as exc:
     raise SystemExit(
         "缺少 pyrtlsdr 依赖，请先安装：pip install pyrtlsdr numpy pillow pygame"
@@ -169,7 +222,14 @@ class FMMonitorApp:
         self.sdr = RtlSdr(self.config.device_index)
         self.sdr.center_freq = self.config.center_freq_mhz * 1e6
         self.sdr.sample_rate = self.config.sample_rate
-        self.sdr.freq_correction = self.config.ppm
+        if self.config.ppm:
+            try:
+                self.sdr.freq_correction = self.config.ppm
+            except Exception as exc:
+                print(
+                    f"[WARN] Failed to apply frequency correction ({self.config.ppm} ppm): {exc}",
+                    file=sys.stderr,
+                )
         if self.config.gain == "auto":
             self.sdr.gain = "auto"
         else:
