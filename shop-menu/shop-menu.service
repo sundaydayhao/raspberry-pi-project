@@ -1,0 +1,14 @@
+[Unit]
+Description=奶茶店HDMI展示系统
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/shop-menu
+ExecStart=/home/pi/shop-menu/venv/bin/python3 /home/pi/shop-menu/app.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奶茶店展示系统 - 管理后台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .slide-list {
+            margin-bottom: 20px;
+        }
+
+        .slide-item {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .slide-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .slide-item p {
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .slide-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .color-picker-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .color-picker-group input[type="color"] {
+            width: 60px;
+            height: 40px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.active {
+            display: block;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+
+        .wifi-network {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .wifi-info {
+            flex: 1;
+        }
+
+        .wifi-info h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .wifi-info p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .signal-strength {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .signal-strong {
+            background: #28a745;
+            color: white;
+        }
+
+        .signal-medium {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .signal-weak {
+            background: #dc3545;
+            color: white;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧋 奶茶店展示系统</h1>
+            <p>管理后台 - 轻松管理您的展示内容</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('content')">内容管理</button>
+            <button class="tab-button" onclick="switchTab('wifi')">WiFi配置</button>
+            <button class="tab-button" onclick="switchTab('settings')">系统设置</button>
+        </div>
+
+        <!-- 内容管理标签页 -->
+        <div id="content-tab" class="tab-content active">
+            <div id="message" class="message"></div>
+            
+            <div style="margin-bottom: 20px;">
+                <button class="btn btn-primary" onclick="openAddSlideModal()">➕ 添加新幻灯片</button>
+                <button class="btn btn-success" onclick="saveAllContent()">💾 保存所有更改</button>
+                <button class="btn btn-secondary" onclick="previewDisplay()">👁️ 预览展示</button>
+            </div>
+
+            <div id="slide-list" class="slide-list"></div>
+        </div>
+
+        <!-- WiFi配置标签页 -->
+        <div id="wifi-tab" class="tab-content">
+            <div id="wifi-message" class="message"></div>
+            
+            <div class="form-group">
+                <h3>当前WiFi状态</h3>
+                <div id="wifi-status" style="padding: 15px; background: #f8f9fa; border-radius: 5px; margin-top: 10px;">
+                    <p>加载中...</p>
+                </div>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <button class="btn btn-primary" onclick="scanWiFi()">🔍 扫描WiFi网络</button>
+            </div>
+
+            <div id="wifi-networks"></div>
+        </div>
+
+        <!-- 系统设置标签页 -->
+        <div id="settings-tab" class="tab-content">
+            <h3>显示设置</h3>
+            <div class="form-group">
+                <label>默认轮播时间（秒）</label>
+                <input type="number" id="default-duration" min="1" max="60" value="5">
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="auto-play" checked>
+                    自动播放
+                </label>
+            </div>
+            <button class="btn btn-success" onclick="saveSettings()">保存设置</button>
+        </div>
+    </div>
+
+    <!-- 编辑幻灯片模态框 -->
+    <div id="slide-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">添加幻灯片</h2>
+                <button class="close-btn" onclick="closeSlideModal()">&times;</button>
+            </div>
+            <form id="slide-form">
+                <input type="hidden" id="slide-id">
+                <div class="form-group">
+                    <label>标题</label>
+                    <input type="text" id="slide-title" required>
+                </div>
+                <div class="form-group">
+                    <label>副标题</label>
+                    <input type="text" id="slide-subtitle">
+                </div>
+                <div class="form-group">
+                    <label>内容</label>
+                    <textarea id="slide-content"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>背景颜色</label>
+                    <div class="color-picker-group">
+                        <input type="color" id="slide-color" value="#FF6B9D">
+                        <input type="text" id="slide-color-text" value="#FF6B9D">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>背景图片</label>
+                    <input type="file" id="slide-image-file" accept="image/*" onchange="previewImage(this)">
+                    <input type="hidden" id="slide-image">
+                    <img id="image-preview" class="preview-image" style="display: none;">
+                </div>
+                <div class="form-group">
+                    <label>显示时长（秒）</label>
+                    <input type="number" id="slide-duration" min="1" max="60" value="5">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary">保存</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeSlideModal()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- WiFi密码输入模态框 -->
+    <div id="wifi-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>连接WiFi</h2>
+                <button class="close-btn" onclick="closeWiFiModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>网络名称</label>
+                <input type="text" id="wifi-ssid" readonly>
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="wifi-password">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="connectWiFi()">连接</button>
+                <button class="btn btn-secondary" onclick="closeWiFiModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载遮罩 -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        let contentData = { slides: [], settings: {} };
+        let currentEditingSlide = null;
+
+        // 页面加载时初始化
+        window.addEventListener('load', () => {
+            loadContent();
+            loadWiFiStatus();
+            
+            // 颜色选择器同步
+            document.getElementById('slide-color').addEventListener('input', (e) => {
+                document.getElementById('slide-color-text').value = e.target.value;
+            });
+            document.getElementById('slide-color-text').addEventListener('input', (e) => {
+                document.getElementById('slide-color').value = e.target.value;
+            });
+            
+            // 表单提交
+            document.getElementById('slide-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveSlide();
+            });
+        });
+
+        // 切换标签页
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            if (tabName === 'wifi') {
+                loadWiFiStatus();
+            }
+        }
+
+        // 加载内容
+        async function loadContent() {
+            try {
+                showLoading();
+                const response = await fetch('/api/admin/content');
+                const result = await response.json();
+                
+                if (result.success) {
+                    contentData = result.data;
+                    renderSlides();
+                    loadSettings();
+                }
+                hideLoading();
+            } catch (error) {
+                console.error('加载内容失败:', error);
+                showMessage('加载内容失败', 'error');
+                hideLoading();
+            }
+        }
+
+        // 渲染幻灯片列表
+        function renderSlides() {
+            const container = document.getElementById('slide-list');
+            container.innerHTML = '';
+            
+            if (contentData.slides.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">暂无幻灯片，点击上方按钮添加</p>';
+                return;
+            }
+            
+            contentData.slides.forEach((slide, index) => {
+                const slideDiv = document.createElement('div');
+                slideDiv.className = 'slide-item';
+                slideDiv.innerHTML = `
+                    <h3>${slide.title || '无标题'}</h3>
+                    <p><strong>副标题:</strong> ${slide.subtitle || '无'}</p>
+                    <p><strong>内容:</strong> ${slide.content || '无'}</p>
+                    <p><strong>背景色:</strong> <span style="display: inline-block; width: 20px; height: 20px; background: ${slide.backgroundColor}; border: 1px solid #ddd; vertical-align: middle;"></span> ${slide.backgroundColor}</p>
+                    <p><strong>显示时长:</strong> ${slide.duration || 5}秒</p>
+                    ${slide.image ? `<p><strong>背景图:</strong> 已设置</p>` : ''}
+                    <div class="slide-actions">
+                        <button class="btn btn-primary" onclick="editSlide(${index})">编辑</button>
+                        <button class="btn btn-danger" onclick="deleteSlide(${index})">删除</button>
+                        ${index > 0 ? `<button class="btn btn-secondary" onclick="moveSlide(${index}, -1)">上移</button>` : ''}
+                        ${index < contentData.slides.length - 1 ? `<button class="btn btn-secondary" onclick="moveSlide(${index}, 1)">下移</button>` : ''}
+                    </div>
+                `;
+                container.appendChild(slideDiv);
+            });
+        }
+
+        // 打开添加幻灯片模态框
+        function openAddSlideModal() {
+            currentEditingSlide = null;
+            document.getElementById('modal-title').textContent = '添加幻灯片';
+            document.getElementById('slide-form').reset();
+            document.getElementById('slide-id').value = '';
+            document.getElementById('slide-color').value = '#FF6B9D';
+            document.getElementById('slide-color-text').value = '#FF6B9D';
+            document.getElementById('image-preview').style.display = 'none';
+            document.getElementById('slide-modal').classList.add('active');
+        }
+
+        // 编辑幻灯片
+        function editSlide(index) {
+            currentEditingSlide = index;
+            const slide = contentData.slides[index];
+            
+            document.getElementById('modal-title').textContent = '编辑幻灯片';
+            document.getElementById('slide-id').value = slide.id;
+            document.getElementById('slide-title').value = slide.title || '';
+            document.getElementById('slide-subtitle').value = slide.subtitle || '';
+            document.getElementById('slide-content').value = slide.content || '';
+            document.getElementById('slide-color').value = slide.backgroundColor || '#FF6B9D';
+            document.getElementById('slide-color-text').value = slide.backgroundColor || '#FF6B9D';
+            document.getElementById('slide-image').value = slide.image || '';
+            document.getElementById('slide-duration').value = slide.duration || 5;
+            
+            if (slide.image) {
+                document.getElementById('image-preview').src = slide.image;
+                document.getElementById('image-preview').style.display = 'block';
+            } else {
+                document.getElementById('image-preview').style.display = 'none';
+            }
+            
+            document.getElementById('slide-modal').classList.add('active');
+        }
+
+        // 保存幻灯片
+        async function saveSlide() {
+            const slideData = {
+                id: document.getElementById('slide-id').value || Date.now(),
+                title: document.getElementById('slide-title').value,
+                subtitle: document.getElementById('slide-subtitle').value,
+                content: document.getElementById('slide-content').value,
+                backgroundColor: document.getElementById('slide-color').value,
+                image: document.getElementById('slide-image').value,
+                duration: parseInt(document.getElementById('slide-duration').value)
+            };
+            
+            if (currentEditingSlide !== null) {
+                contentData.slides[currentEditingSlide] = slideData;
+            } else {
+                contentData.slides.push(slideData);
+            }
+            
+            renderSlides();
+            closeSlideModal();
+            showMessage('幻灯片已更新，请点击"保存所有更改"按钮保存', 'success');
+        }
+
+        // 删除幻灯片
+        function deleteSlide(index) {
+            if (confirm('确定要删除这个幻灯片吗？')) {
+                contentData.slides.splice(index, 1);
+                renderSlides();
+                showMessage('幻灯片已删除，请点击"保存所有更改"按钮保存', 'success');
+            }
+        }
+
+        // 移动幻灯片
+        function moveSlide(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex >= 0 && newIndex < contentData.slides.length) {
+                [contentData.slides[index], contentData.slides[newIndex]] = 
+                [contentData.slides[newIndex], contentData.slides[index]];
+                renderSlides();
+                showMessage('幻灯片已移动，请点击"保存所有更改"按钮保存', 'success');
+            }
+        }
+
+        // 保存所有内容
+        async function saveAllContent() {
+            try {
+                showLoading();
+                const response = await fetch('/api/admin/content', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(contentData)
+                });
+                
+                const result = await response.json();
+                hideLoading();
+                
+                if (result.success) {
+                    showMessage('保存成功！', 'success');
+                } else {
+                    showMessage('保存失败: ' + result.message, 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                showMessage('保存失败: ' + error.message, 'error');
+            }
+        }
+
+        // 预览图片
+        async function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const formData = new FormData();
+                formData.append('file', input.files[0]);
+                
+                try {
+                    showLoading();
+                    const response = await fetch('/api/admin/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    hideLoading();
+                    
+                    if (result.success) {
+                        document.getElementById('slide-image').value = result.url;
+                        document.getElementById('image-preview').src = result.url;
+                        document.getElementById('image-preview').style.display = 'block';
+                    } else {
+                        alert('上传失败: ' + result.message);
+                    }
+                } catch (error) {
+                    hideLoading();
+                    alert('上传失败: ' + error.message);
+                }
+            }
+        }
+
+        // 关闭幻灯片模态框
+        function closeSlideModal() {
+            document.getElementById('slide-modal').classList.remove('active');
+        }
+
+        // 预览展示
+        function previewDisplay() {
+            window.open('/display', '_blank');
+        }
+
+        // 加载WiFi状态
+        async function loadWiFiStatus() {
+            try {
+                const response = await fetch('/api/wifi/status');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const status = result.data;
+                    const statusDiv = document.getElementById('wifi-status');
+                    
+                    if (status.connected) {
+                        statusDiv.innerHTML = `
+                            <p style="color: #28a745; font-weight: bold;">✓ 已连接</p>
+                            <p>网络名称: ${status.ssid}</p>
+                        `;
+                    } else if (status.ap_mode) {
+                        statusDiv.innerHTML = `
+                            <p style="color: #ffc107; font-weight: bold;">⚠ AP模式</p>
+                            <p>请连接到WiFi网络</p>
+                        `;
+                    } else {
+                        statusDiv.innerHTML = `
+                            <p style="color: #dc3545; font-weight: bold;">✗ 未连接</p>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('加载WiFi状态失败:', error);
+            }
+        }
+
+        // 扫描WiFi
+        async function scanWiFi() {
+            try {
+                showLoading();
+                const response = await fetch('/api/wifi/scan');
+                const result = await response.json();
+                hideLoading();
+                
+                if (result.success) {
+                    renderWiFiNetworks(result.data);
+                } else {
+                    showWiFiMessage('扫描失败', 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                showWiFiMessage('扫描失败: ' + error.message, 'error');
+            }
+        }
+
+        // 渲染WiFi网络列表
+        function renderWiFiNetworks(networks) {
+            const container = document.getElementById('wifi-networks');
+            container.innerHTML = '<h3>可用网络</h3>';
+            
+            if (networks.length === 0) {
+                container.innerHTML += '<p style="text-align: center; color: #999; padding: 20px;">未找到可用网络</p>';
+                return;
+            }
+            
+            networks.forEach(network => {
+                const signalClass = network.signal > 70 ? 'signal-strong' : 
+                                   network.signal > 40 ? 'signal-medium' : 'signal-weak';
+                
+                const networkDiv = document.createElement('div');
+                networkDiv.className = 'wifi-network';
+                networkDiv.innerHTML = `
+                    <div class="wifi-info">
+                        <h4>${network.ssid} <span class="${signalClass} signal-strength">${network.signal}%</span></h4>
+                        <p>${network.security}</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openWiFiModal('${network.ssid}')">连接</button>
+                `;
+                container.appendChild(networkDiv);
+            });
+        }
+
+        // 打开WiFi连接模态框
+        function openWiFiModal(ssid) {
+            document.getElementById('wifi-ssid').value = ssid;
+            document.getElementById('wifi-password').value = '';
+            document.getElementById('wifi-modal').classList.add('active');
+        }
+
+        // 关闭WiFi模态框
+        function closeWiFiModal() {
+            document.getElementById('wifi-modal').classList.remove('active');
+        }
+
+        // 连接WiFi
+        async function connectWiFi() {
+            const ssid = document.getElementById('wifi-ssid').value;
+            const password = document.getElementById('wifi-password').value;
+            
+            try {
+                showLoading();
+                const response = await fetch('/api/wifi/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ssid, password })
+                });
+                
+                const result = await response.json();
+                hideLoading();
+                closeWiFiModal();
+                
+                if (result.success) {
+                    showWiFiMessage('连接成功！', 'success');
+                    setTimeout(() => loadWiFiStatus(), 2000);
+                } else {
+                    showWiFiMessage('连接失败: ' + result.message, 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                closeWiFiModal();
+                showWiFiMessage('连接失败: ' + error.message, 'error');
+            }
+        }
+
+        // 加载设置
+        function loadSettings() {
+            if (contentData.settings) {
+                document.getElementById('default-duration').value = contentData.settings.defaultDuration || 5;
+                document.getElementById('auto-play').checked = contentData.settings.autoPlay !== false;
+            }
+        }
+
+        // 保存设置
+        function saveSettings() {
+            contentData.settings = {
+                defaultDuration: parseInt(document.getElementById('default-duration').value),
+                autoPlay: document.getElementById('auto-play').checked,
+                transition: 'fade'
+            };
+            
+            saveAllContent();
+        }
+
+        // 显示消息
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = 'message ' + type + ' active';
+            setTimeout(() => {
+                messageDiv.classList.remove('active');
+            }, 5000);
+        }
+
+        // 显示WiFi消息
+        function showWiFiMessage(text, type) {
+            const messageDiv = document.getElementById('wifi-message');
+            messageDiv.textContent = text;
+            messageDiv.className = 'message ' + type + ' active';
+            setTimeout(() => {
+                messageDiv.classList.remove('active');
+            }, 5000);
+        }
+
+        // 显示加载
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.add('active');
+        }
+
+        // 隐藏加载
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
