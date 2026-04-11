@@ -21,6 +21,26 @@ find_browser_command() {
     return 1
 }
 
+prepare_display_environment() {
+    if [ -z "${DISPLAY:-}" ]; then
+        export DISPLAY=:0
+    fi
+
+    if [ -z "${XAUTHORITY:-}" ] && [ -f "$HOME/.Xauthority" ]; then
+        export XAUTHORITY="$HOME/.Xauthority"
+    fi
+}
+
+can_access_display() {
+    prepare_display_environment
+
+    if ! command -v xset &> /dev/null; then
+        return 1
+    fi
+
+    xset q &> /dev/null
+}
+
 echo "========================================="
 echo "  奶茶店展示系统启动中..."
 echo "========================================="
@@ -83,35 +103,39 @@ echo ""
 
 # 检查是否在树莓派上运行
 if [ -f /proc/device-tree/model ]; then
-    MODEL=$(cat /proc/device-tree/model)
+    MODEL="$(tr -d '\0' < /proc/device-tree/model)"
     if [[ $MODEL == *"Raspberry Pi"* ]]; then
         echo "检测到树莓派环境"
-        
-        # 等待5秒后启动浏览器全屏显示
-        sleep 5
-        
-        # 设置DISPLAY环境变量
-        export DISPLAY=:0
-        
-        # 关闭屏幕保护和电源管理
-        xset s off
-        xset -dpms
-        xset s noblank
 
-        BROWSER_BIN="$(find_browser_command)"
-        if [ -n "$BROWSER_BIN" ]; then
-            # 启动Chromium浏览器全屏模式
-            echo "启动全屏展示..."
-            "$BROWSER_BIN" --kiosk --incognito --disable-infobars \
-                --disable-session-crashed-bubble \
-                --disable-restore-session-state \
-                --noerrdialogs \
-                http://localhost:5000/display &
+        if [ "${SHOP_MENU_SKIP_BROWSER:-0}" = "1" ]; then
+            echo "当前在服务模式下运行，跳过图形界面浏览器启动"
+        elif can_access_display; then
+            # 等待5秒后启动浏览器全屏显示
+            sleep 5
 
-            BROWSER_PID=$!
-            echo "浏览器PID: $BROWSER_PID"
+            # 关闭屏幕保护和电源管理
+            xset s off
+            xset -dpms
+            xset s noblank
+
+            BROWSER_BIN="$(find_browser_command)"
+            if [ -n "$BROWSER_BIN" ]; then
+                # 启动Chromium浏览器全屏模式
+                echo "启动全屏展示..."
+                "$BROWSER_BIN" --kiosk --incognito --disable-infobars \
+                    --disable-session-crashed-bubble \
+                    --disable-restore-session-state \
+                    --noerrdialogs \
+                    http://localhost:5000/display &
+
+                BROWSER_PID=$!
+                echo "浏览器PID: $BROWSER_PID"
+            else
+                echo "警告: 未找到 Chromium 浏览器，跳过全屏展示启动"
+            fi
         else
-            echo "警告: 未找到 Chromium 浏览器，跳过全屏展示启动"
+            echo "未检测到可用的图形会话，跳过浏览器启动"
+            echo "如需开机自动全屏展示，请在桌面会话中配置 autostart.sh"
         fi
     fi
 fi

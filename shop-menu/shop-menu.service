@@ -6,6 +6,7 @@ After=network.target
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/shop-menu
+Environment=SHOP_MENU_SKIP_BROWSER=1
 ExecStart=/home/pi/shop-menu/start.sh
 Restart=always
 RestartSec=10

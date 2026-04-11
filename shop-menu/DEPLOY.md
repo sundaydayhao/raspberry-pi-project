@@ -120,6 +120,8 @@ RestartSec=10
 WantedBy=multi-user.target
 ```
 
+说明：这里的 `systemd` 服务只负责启动 Flask 后端。Chromium 全屏展示建议通过树莓派桌面环境的 `autostart.sh` 启动，避免 `DISPLAY=:0` 无权限访问的问题。
+
 启用服务：
 
 ```bash

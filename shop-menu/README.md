@@ -81,6 +81,8 @@ sudo systemctl start shop-menu.service
 sudo systemctl status shop-menu.service
 ```
 
+说明：`systemd` 服务只负责启动后端服务，不直接拉起 Chromium。全屏浏览器应在树莓派桌面会话中通过 `autostart.sh` 启动，这样不会遇到 `xset` 或 `DISPLAY` 授权问题。
+
 ### 5. 配置自动启动浏览器
 
 ```bash
@@ -97,6 +99,8 @@ nano ~/.config/lxsession/LXDE-pi/autostart
 # 添加以下内容：
 # @bash /home/pi/.config/lxsession/LXDE-pi/autostart.sh
 ```
+
+如果你是通过 SSH 手动执行 `./start.sh`，脚本会检测当前是否有可用的图形会话；没有的话只启动后端，不再强行拉起浏览器。
 
 ### 6. 手动启动（测试用）
 

@@ -110,6 +110,7 @@ After=network.target
 Type=simple
 User=$INSTALL_USER
 WorkingDirectory=$SCRIPT_DIR
+Environment=SHOP_MENU_SKIP_BROWSER=1
 ExecStart=$SCRIPT_DIR/start.sh
 Restart=always
 RestartSec=10
