@@ -25,12 +25,50 @@ fi
 if [ -z "$INSTALL_USER" ] || ! id "$INSTALL_USER" &> /dev/null; then
     INSTALL_USER="root"
 fi
+INSTALL_HOME="$(getent passwd "$INSTALL_USER" | cut -d: -f6)"
+if [ -z "$INSTALL_HOME" ]; then
+    INSTALL_HOME="$SCRIPT_DIR"
+fi
 
 run_as_install_user() {
     if [ "$INSTALL_USER" = "root" ]; then
         "$@"
     else
         runuser -u "$INSTALL_USER" -- "$@"
+    fi
+}
+
+setup_desktop_autostart() {
+    local labwc_dir="$INSTALL_HOME/.config/labwc"
+    local labwc_file="$labwc_dir/autostart"
+    local lxde_dir="$INSTALL_HOME/.config/lxsession/LXDE-pi"
+    local lxde_file="$lxde_dir/autostart"
+    local labwc_line="bash $SCRIPT_DIR/autostart.sh &"
+    local lxde_line="@bash $SCRIPT_DIR/autostart.sh"
+
+    echo "配置桌面环境自动启动浏览器..."
+
+    run_as_install_user mkdir -p "$labwc_dir"
+    run_as_install_user touch "$labwc_file"
+    if ! grep -Fqx "$labwc_line" "$labwc_file"; then
+        printf '%s\n' "$labwc_line" >> "$labwc_file"
+    fi
+    chown "$INSTALL_USER":"$INSTALL_USER" "$labwc_file"
+
+    run_as_install_user mkdir -p "$lxde_dir"
+    run_as_install_user touch "$lxde_file"
+    if ! grep -Fqx "$lxde_line" "$lxde_file"; then
+        printf '%s\n' "$lxde_line" >> "$lxde_file"
+    fi
+    chown "$INSTALL_USER":"$INSTALL_USER" "$lxde_file"
+
+    if command -v raspi-config &> /dev/null; then
+        echo "配置树莓派开机进入桌面并自动登录..."
+        if ! raspi-config nonint do_boot_behaviour B4; then
+            echo "警告: 无法自动设置 Boot to Desktop Autologin，请手动运行 sudo raspi-config"
+        fi
+    else
+        echo "警告: 未找到 raspi-config，请手动设置 Boot to Desktop Autologin"
     fi
 }
 
@@ -121,6 +159,10 @@ EOF
 
 # 设置脚本可执行权限
 chmod +x start.sh
+chmod +x autostart.sh
+
+# 配置桌面会话中的浏览器自启动
+setup_desktop_autostart
 
 # 重新加载systemd
 systemctl daemon-reload

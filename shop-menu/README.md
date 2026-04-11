@@ -86,18 +86,25 @@ sudo systemctl status shop-menu.service
 ### 5. 配置自动启动浏览器
 
 ```bash
-# 创建autostart目录
+# Raspberry Pi OS Bookworm / labwc
+mkdir -p ~/.config/labwc
+printf '%s\n' "bash /home/pi/shop-menu/autostart.sh &" >> ~/.config/labwc/autostart
+
+# 旧版 Raspberry Pi OS / LXDE
 mkdir -p ~/.config/lxsession/LXDE-pi
+printf '%s\n' "@bash /home/pi/shop-menu/autostart.sh" >> ~/.config/lxsession/LXDE-pi/autostart
 
-# 复制autostart脚本
-cp autostart.sh ~/.config/lxsession/LXDE-pi/autostart.sh
-chmod +x ~/.config/lxsession/LXDE-pi/autostart.sh
+# 让系统开机进入桌面并自动登录
+sudo raspi-config nonint do_boot_behaviour B4
+```
 
-# 编辑LXDE autostart配置
-nano ~/.config/lxsession/LXDE-pi/autostart
+如果你使用的是仓库里的 [`install.sh`](/home/hao/work/raspberry-pi-project/shop-menu/install.sh)，它现在会自动完成上述配置。
 
-# 添加以下内容：
-# @bash /home/pi/.config/lxsession/LXDE-pi/autostart.sh
+验证当前是否已配置：
+
+```bash
+cat ~/.config/labwc/autostart
+cat ~/.config/lxsession/LXDE-pi/autostart
 ```
 
 如果你是通过 SSH 手动执行 `./start.sh`，脚本会检测当前是否有可用的图形会话；没有的话只启动后端，不再强行拉起浏览器。

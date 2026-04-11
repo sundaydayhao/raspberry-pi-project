@@ -122,6 +122,8 @@ WantedBy=multi-user.target
 
 说明：这里的 `systemd` 服务只负责启动 Flask 后端。Chromium 全屏展示建议通过树莓派桌面环境的 `autostart.sh` 启动，避免 `DISPLAY=:0` 无权限访问的问题。
 
+对于 Raspberry Pi OS Bookworm，优先使用 `~/.config/labwc/autostart`；较旧系统可继续使用 `~/.config/lxsession/LXDE-pi/autostart`。另外需要把系统设置为 Boot to Desktop Autologin。
+
 启用服务：
 
 ```bash
@@ -136,6 +138,18 @@ sudo systemctl enable shop-menu.service
 
 # 启动服务
 sudo systemctl start shop-menu.service
+```
+
+配置浏览器开机自启动：
+
+```bash
+mkdir -p ~/.config/labwc
+printf '%s\n' "bash /home/pi/shop-menu/autostart.sh &" >> ~/.config/labwc/autostart
+
+mkdir -p ~/.config/lxsession/LXDE-pi
+printf '%s\n' "@bash /home/pi/shop-menu/autostart.sh" >> ~/.config/lxsession/LXDE-pi/autostart
+
+sudo raspi-config nonint do_boot_behaviour B4
 ```
 
 ## 服务管理
