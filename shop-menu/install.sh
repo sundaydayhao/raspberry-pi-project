@@ -16,13 +16,30 @@ fi
 # 获取脚本所在目录
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
+VENV_DIR="$SCRIPT_DIR/venv"
+
+INSTALL_USER="${SUDO_USER:-}"
+if [ -z "$INSTALL_USER" ] || ! id "$INSTALL_USER" &> /dev/null; then
+    INSTALL_USER="$(stat -c '%U' "$SCRIPT_DIR" 2>/dev/null)"
+fi
+if [ -z "$INSTALL_USER" ] || ! id "$INSTALL_USER" &> /dev/null; then
+    INSTALL_USER="root"
+fi
+
+run_as_install_user() {
+    if [ "$INSTALL_USER" = "root" ]; then
+        "$@"
+    else
+        runuser -u "$INSTALL_USER" -- "$@"
+    fi
+}
 
 echo "步骤 1/6: 更新系统包..."
 apt-get update
 
 echo ""
 echo "步骤 2/6: 安装Python3和pip..."
-apt-get install -y python3 python3-pip
+apt-get install -y python3 python3-pip python3-venv
 
 echo ""
 echo "步骤 3/6: 安装系统依赖..."
@@ -34,7 +51,18 @@ apt-get install -y \
 
 echo ""
 echo "步骤 4/6: 安装Python依赖..."
-pip3 install -r requirements.txt
+if [ "$INSTALL_USER" != "root" ] && ! runuser -u "$INSTALL_USER" -- test -w "$SCRIPT_DIR"; then
+    echo "警告: $INSTALL_USER 无法写入 $SCRIPT_DIR，将使用 root 创建虚拟环境"
+    INSTALL_USER="root"
+fi
+
+if [ ! -x "$VENV_DIR/bin/python3" ]; then
+    echo "创建虚拟环境: $VENV_DIR"
+    run_as_install_user python3 -m venv "$VENV_DIR"
+fi
+
+echo "使用用户 $INSTALL_USER 安装依赖到虚拟环境..."
+run_as_install_user "$VENV_DIR/bin/python3" -m pip install -r requirements.txt
 
 echo ""
 echo "步骤 5/6: 创建必要的目录..."
@@ -46,25 +74,22 @@ echo ""
 echo "步骤 6/6: 配置自动启动..."
 
 # 创建systemd服务文件
-cat > /etc/systemd/system/shop-menu.service << 'EOF'
+cat > /etc/systemd/system/shop-menu.service << EOF
 [Unit]
 Description=Tea Shop Display System
 After=network.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/shop-menu
-ExecStart=/home/pi/shop-menu/start.sh
+User=$INSTALL_USER
+WorkingDirectory=$SCRIPT_DIR
+ExecStart=$SCRIPT_DIR/start.sh
 Restart=always
 RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
 EOF
-
-# 更新WorkingDirectory和ExecStart路径
-sed -i "s|/home/pi/shop-menu|$SCRIPT_DIR|g" /etc/systemd/system/shop-menu.service
 
 # 设置脚本可执行权限
 chmod +x start.sh

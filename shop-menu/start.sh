@@ -3,6 +3,8 @@
 
 # 获取脚本所在目录
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+VENV_DIR="$SCRIPT_DIR/venv"
+PYTHON_BIN="$VENV_DIR/bin/python3"
 cd "$SCRIPT_DIR"
 
 echo "========================================="
@@ -15,11 +17,22 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
+if [ ! -x "$PYTHON_BIN" ]; then
+    echo "未找到虚拟环境，正在创建..."
+    if ! python3 -m venv "$VENV_DIR"; then
+        echo "错误: 无法创建虚拟环境，请先安装 python3-venv"
+        exit 1
+    fi
+fi
+
 # 检查依赖是否安装
 echo "检查依赖..."
-if ! python3 -c "import flask" &> /dev/null; then
-    echo "正在安装依赖..."
-    pip3 install -r requirements.txt
+if ! "$PYTHON_BIN" -c "import flask" &> /dev/null; then
+    echo "正在安装依赖到虚拟环境..."
+    if ! "$PYTHON_BIN" -m pip install -r requirements.txt; then
+        echo "错误: Python依赖安装失败"
+        exit 1
+    fi
 fi
 
 # 创建必要的目录
@@ -30,7 +43,7 @@ mkdir -p templates
 
 # 启动Flask服务器
 echo "启动Flask服务器..."
-python3 -m server.app &
+"$PYTHON_BIN" -m server.app &
 SERVER_PID=$!
 echo "服务器PID: $SERVER_PID"
 

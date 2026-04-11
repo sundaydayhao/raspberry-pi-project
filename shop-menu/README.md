@@ -104,8 +104,8 @@ nano ~/.config/lxsession/LXDE-pi/autostart
 chmod +x start.sh
 ./start.sh
 
-# 或直接运行
-python3 app.py
+# 或直接使用虚拟环境中的 Python
+venv/bin/python3 -m server.app
 ```
 
 ## 📱 使用说明

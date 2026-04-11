@@ -63,6 +63,7 @@ sudo apt-get upgrade -y
 sudo apt-get install -y \
     python3 \
     python3-pip \
+    python3-venv \
     chromium-browser \
     x11-xserver-utils \
     network-manager \
@@ -81,7 +82,8 @@ cd shop-menu
 #### 3. 安装Python依赖
 
 ```bash
-pip3 install -r requirements.txt
+python3 -m venv venv
+./venv/bin/python3 -m pip install -r requirements.txt
 ```
 
 #### 4. 创建必要目录
@@ -435,7 +437,7 @@ sudo ufw enable
 ```bash
 cd ~/shop-menu
 git pull
-pip3 install -r requirements.txt
+./venv/bin/python3 -m pip install -r requirements.txt
 sudo systemctl restart shop-menu
 ```
 

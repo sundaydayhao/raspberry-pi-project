@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/shop-menu
-ExecStart=/home/pi/shop-menu/venv/bin/python3 /home/pi/shop-menu/app.py
+ExecStart=/home/pi/shop-menu/start.sh
 Restart=always
 RestartSec=10
 
