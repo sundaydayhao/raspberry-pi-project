@@ -1,0 +1,104 @@
+<%
+  const formData = editingCategory || {
+    id: '',
+    name: '',
+    description: '',
+    color: '#c2410c',
+    sortOrder: categories.length + 1
+  };
+%>
+<%- include('../partials/admin-top') %>
+
+<section class="content-grid">
+  <article class="panel-card">
+    <div class="panel-card__header">
+      <div>
+        <p class="page-eyebrow"><%= editingCategory ? '编辑分类' : '新增分类' %></p>
+        <h3>分类表单</h3>
+      </div>
+      <% if (editingCategory) { %>
+        <a href="/admin/categories" class="button button--ghost">取消编辑</a>
+      <% } %>
+    </div>
+
+    <form method="post" action="/admin/categories/save" class="form-stack">
+      <input type="hidden" name="id" value="<%= formData.id %>">
+
+      <div class="form-grid">
+        <label class="field">
+          <span class="field__label">分类名称</span>
+          <input type="text" name="name" value="<%= formData.name %>" required>
+        </label>
+
+        <label class="field">
+          <span class="field__label">排序</span>
+          <input type="number" name="sortOrder" value="<%= formData.sortOrder %>" min="0">
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="field__label">分类说明</span>
+        <textarea name="description" rows="4"><%= formData.description %></textarea>
+      </label>
+
+      <label class="field">
+        <span class="field__label">分类颜色</span>
+        <input type="color" name="color" value="<%= formData.color %>">
+      </label>
+
+      <div class="form-actions">
+        <button type="submit" class="button button--primary"><%= editingCategory ? '更新分类' : '新增分类' %></button>
+      </div>
+    </form>
+  </article>
+
+  <article class="panel-card">
+    <div class="panel-card__header">
+      <div>
+        <p class="page-eyebrow">现有分类</p>
+        <h3>分类列表</h3>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>名称</th>
+            <th>描述</th>
+            <th>排序</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (categories.length === 0) { %>
+            <tr>
+              <td colspan="4" class="table-empty">还没有分类。</td>
+            </tr>
+          <% } %>
+          <% categories.forEach((category) => { %>
+            <tr>
+              <td>
+                <div class="table-color-tag">
+                  <span class="table-color-tag__dot" style="background:<%= category.color %>"></span>
+                  <strong><%= category.name %></strong>
+                </div>
+              </td>
+              <td><%= category.description || '暂无说明' %></td>
+              <td><%= category.sortOrder %></td>
+              <td class="table-actions">
+                <a href="/admin/categories?edit=<%= category.id %>" class="button button--ghost button--small">编辑</a>
+                <form method="post" action="/admin/categories/<%= category.id %>/delete" onsubmit="return confirm('确认删除该分类？')">
+                  <button type="submit" class="button button--danger button--small">删除</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<%- include('../partials/admin-bottom') %>
+

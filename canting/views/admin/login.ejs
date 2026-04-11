@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pageTitle %> | 餐厅展示后台</title>
+    <link rel="stylesheet" href="/css/admin.css">
+  </head>
+  <body class="login-page">
+    <div class="login-shell">
+      <section class="login-hero">
+        <p class="page-eyebrow">Restaurant Display System</p>
+        <h1>树莓派餐厅菜品展示与优惠推荐系统</h1>
+        <p>
+          后台可维护菜品、价格、促销推荐和屏幕轮播参数。前台展示页会自动更新，适合放在收银台、门店入口或点餐区大屏。
+        </p>
+        <div class="hero-tags">
+          <span>自动轮播</span>
+          <span>后台管理</span>
+          <span>图片上传</span>
+          <span>本地持久化</span>
+        </div>
+      </section>
+
+      <section class="login-card">
+        <div>
+          <p class="page-eyebrow">后台登录</p>
+          <h2>输入管理员账号</h2>
+        </div>
+
+        <% if (flash) { %>
+          <div class="flash flash--<%= flash.type %>"><%= flash.text %></div>
+        <% } %>
+
+        <% if (defaultPasswordInUse) { %>
+          <div class="inline-alert inline-alert--warning">
+            当前默认账号为 `<%= adminUser %>`，默认密码为 `admin123456`。部署前请修改 `.env`。
+          </div>
+        <% } %>
+
+        <form method="post" action="/admin/login" class="form-stack">
+          <label class="field">
+            <span class="field__label">账号</span>
+            <input type="text" name="username" value="<%= adminUser %>" required>
+          </label>
+
+          <label class="field">
+            <span class="field__label">密码</span>
+            <input type="password" name="password" placeholder="请输入管理员密码" required>
+          </label>
+
+          <button type="submit" class="button button--primary button--block">进入后台</button>
+        </form>
+      </section>
+    </div>
+  </body>
+</html>
+

@@ -1,0 +1,131 @@
+{
+  "settings": {
+    "restaurantName": "食味小馆",
+    "slogan": "现炒现做 · 今日优选",
+    "announcement": "欢迎光临，请到收银台扫码点餐，优惠套餐限时供应。",
+    "currencySymbol": "￥",
+    "rotationSeconds": 10,
+    "refreshSeconds": 45,
+    "recommendedTitle": "招牌热卖",
+    "boardTitle": "今日菜单",
+    "promoTitle": "今日优惠",
+    "themeColor": "#c2410c",
+    "accentColor": "#fbbf24"
+  },
+  "categories": [
+    {
+      "id": "cat_hot",
+      "name": "热菜现炒",
+      "description": "适合正餐，现点现做。",
+      "color": "#dc6b2f",
+      "sortOrder": 1
+    },
+    {
+      "id": "cat_snack",
+      "name": "风味小吃",
+      "description": "高翻台爆款，适合加购。",
+      "color": "#0f766e",
+      "sortOrder": 2
+    },
+    {
+      "id": "cat_drink",
+      "name": "饮品甜点",
+      "description": "堂食外带都方便。",
+      "color": "#7c3aed",
+      "sortOrder": 3
+    }
+  ],
+  "dishes": [
+    {
+      "id": "dish_1",
+      "categoryId": "cat_hot",
+      "name": "招牌小炒黄牛肉",
+      "description": "鲜嫩牛肉搭配线椒爆炒，香气足、下饭快。",
+      "price": 38,
+      "originalPrice": 45,
+      "image": "",
+      "tags": [
+        "招牌",
+        "热卖",
+        "下饭"
+      ],
+      "spicyLevel": 2,
+      "recommended": true,
+      "available": true,
+      "sortOrder": 1
+    },
+    {
+      "id": "dish_2",
+      "categoryId": "cat_hot",
+      "name": "金汤酸菜鱼",
+      "description": "金汤浓郁，鱼片滑嫩，适合多人共享。",
+      "price": 52,
+      "originalPrice": 0,
+      "image": "",
+      "tags": [
+        "新品",
+        "多人推荐"
+      ],
+      "spicyLevel": 1,
+      "recommended": true,
+      "available": true,
+      "sortOrder": 2
+    },
+    {
+      "id": "dish_3",
+      "categoryId": "cat_snack",
+      "name": "藤椒鸡排饭",
+      "description": "外酥里嫩，藤椒香气清爽不腻。",
+      "price": 24,
+      "originalPrice": 28,
+      "image": "",
+      "tags": [
+        "套餐",
+        "午市"
+      ],
+      "spicyLevel": 1,
+      "recommended": true,
+      "available": true,
+      "sortOrder": 3
+    },
+    {
+      "id": "dish_4",
+      "categoryId": "cat_drink",
+      "name": "鲜橙气泡饮",
+      "description": "鲜橙果香配气泡口感，适合搭配炸物。",
+      "price": 12,
+      "originalPrice": 15,
+      "image": "",
+      "tags": [
+        "加购推荐"
+      ],
+      "spicyLevel": 0,
+      "recommended": false,
+      "available": true,
+      "sortOrder": 4
+    }
+  ],
+  "promotions": [
+    {
+      "id": "promo_1",
+      "title": "午市双人套餐",
+      "subtitle": "11:00 - 14:00 限时优惠",
+      "description": "任意热菜 2 份 + 米饭 2 份 + 饮品 2 杯，立减 16 元。",
+      "badge": "限时套餐",
+      "image": "",
+      "enabled": true,
+      "sortOrder": 1
+    },
+    {
+      "id": "promo_2",
+      "title": "进店扫码立减",
+      "subtitle": "新客点单专享",
+      "description": "首次扫码下单满 39 元，自动减 8 元。",
+      "badge": "新客福利",
+      "image": "",
+      "enabled": true,
+      "sortOrder": 2
+    }
+  ],
+  "updatedAt": "2026-04-11T12:00:00.000Z"
+}

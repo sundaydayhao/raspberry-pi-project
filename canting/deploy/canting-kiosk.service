@@ -1,0 +1,20 @@
+[Unit]
+Description=Canting Chromium Kiosk
+After=graphical.target canting-app.service
+Wants=graphical.target canting-app.service
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/canting
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/pi/.Xauthority
+Environment=DISPLAY_URL=http://127.0.0.1:3200/
+ExecStart=/bin/bash /home/pi/canting/deploy/canting-kiosk.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target
+

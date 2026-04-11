@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pageTitle %> | 餐厅展示后台</title>
+    <link rel="stylesheet" href="/css/admin.css">
+  </head>
+  <body>
+    <div class="admin-shell">
+      <aside class="admin-sidebar">
+        <div class="brand-card">
+          <p class="brand-card__eyebrow">Raspberry Pi Signage</p>
+          <h1 class="brand-card__title">餐厅展示后台</h1>
+          <p class="brand-card__text">编辑菜品、优惠和展示屏配置，保存后前台自动刷新。</p>
+        </div>
+
+        <nav class="sidebar-nav">
+          <a href="/admin" class="sidebar-nav__link <%= activeNav === 'dashboard' ? 'is-active' : '' %>">总览</a>
+          <a href="/admin/settings" class="sidebar-nav__link <%= activeNav === 'settings' ? 'is-active' : '' %>">展示设置</a>
+          <a href="/admin/categories" class="sidebar-nav__link <%= activeNav === 'categories' ? 'is-active' : '' %>">分类管理</a>
+          <a href="/admin/dishes" class="sidebar-nav__link <%= activeNav === 'dishes' ? 'is-active' : '' %>">菜品管理</a>
+          <a href="/admin/promotions" class="sidebar-nav__link <%= activeNav === 'promotions' ? 'is-active' : '' %>">优惠管理</a>
+        </nav>
+
+        <div class="sidebar-panel">
+          <p class="sidebar-panel__label">展示地址</p>
+          <a href="/" target="_blank" rel="noreferrer" class="sidebar-panel__link">/</a>
+          <p class="sidebar-panel__hint">在树莓派 Chromium 中打开该地址后即可全屏展示。</p>
+        </div>
+
+        <% if (defaultPasswordInUse) { %>
+          <div class="inline-alert inline-alert--warning">
+            当前仍在使用默认后台密码，请尽快在 `.env` 中修改。
+          </div>
+        <% } %>
+
+        <form method="post" action="/admin/logout" class="sidebar-logout">
+          <button type="submit" class="button button--ghost button--block">退出登录</button>
+        </form>
+      </aside>
+
+      <main class="admin-main">
+        <header class="admin-header">
+          <div>
+            <p class="page-eyebrow">后台管理</p>
+            <h2 class="page-title"><%= pageTitle %></h2>
+          </div>
+          <div class="header-meta">
+            <span>账号：<%= adminAccount %></span>
+            <span>最近更新：<%= formatDateTime(store.updatedAt) %></span>
+          </div>
+        </header>
+
+        <% if (flash) { %>
+          <div class="flash flash--<%= flash.type %>"><%= flash.text %></div>
+        <% } %>
+

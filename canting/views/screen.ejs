@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pageTitle %></title>
+    <link rel="stylesheet" href="/css/screen.css">
+  </head>
+  <body>
+    <div
+      class="screen-shell"
+      id="screen-shell"
+      style="--theme-color:<%= screenData.settings.themeColor %>; --accent-color:<%= screenData.settings.accentColor %>;"
+    >
+      <div class="ambient ambient--one"></div>
+      <div class="ambient ambient--two"></div>
+      <div class="ambient ambient--three"></div>
+
+      <header class="topbar">
+        <div class="topbar__brand">
+          <p class="topbar__eyebrow">Restaurant Display Board</p>
+          <h1 id="restaurant-name"><%= screenData.settings.restaurantName %></h1>
+          <p id="restaurant-slogan"><%= screenData.settings.slogan %></p>
+        </div>
+
+        <div class="topbar__meta">
+          <div class="meta-card">
+            <span class="meta-card__label">当前时间</span>
+            <strong id="clock-text">--:--</strong>
+          </div>
+          <div class="meta-card">
+            <span class="meta-card__label">数据更新</span>
+            <strong id="updated-at"><%= formatDateTime(screenData.updatedAt) %></strong>
+          </div>
+        </div>
+      </header>
+
+      <main class="display-grid">
+        <section class="display-card display-card--hero">
+          <div class="section-heading">
+            <div>
+              <p class="section-heading__eyebrow">Promotion</p>
+              <h2 id="promo-title"><%= screenData.settings.promoTitle %></h2>
+            </div>
+            <div id="promo-dots" class="dots"></div>
+          </div>
+          <div id="promo-stage" class="promo-stage"></div>
+        </section>
+
+        <section class="display-card display-card--recommended">
+          <div class="section-heading">
+            <div>
+              <p class="section-heading__eyebrow">Signature Picks</p>
+              <h2 id="recommended-title"><%= screenData.settings.recommendedTitle %></h2>
+            </div>
+          </div>
+          <div id="recommended-grid" class="recommended-grid"></div>
+        </section>
+
+        <section class="display-card display-card--menu">
+          <div class="section-heading">
+            <div>
+              <p class="section-heading__eyebrow">Menu Board</p>
+              <h2 id="board-title"><%= screenData.settings.boardTitle %></h2>
+            </div>
+            <div id="menu-dots" class="dots"></div>
+          </div>
+          <div id="menu-pages" class="menu-pages"></div>
+        </section>
+
+        <section class="display-card display-card--sidebar">
+          <div class="section-heading">
+            <div>
+              <p class="section-heading__eyebrow">Categories</p>
+              <h2>档口分类</h2>
+            </div>
+          </div>
+          <div id="category-list" class="category-list"></div>
+          <div class="announcement-card">
+            <p class="announcement-card__label">门店公告</p>
+            <div id="announcement" class="announcement-card__text"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      window.__SCREEN_DATA__ = <%- JSON.stringify(screenData).replace(/</g, '\\u003c') %>;
+    </script>
+    <script src="/js/screen.js"></script>
+  </body>
+</html>
+

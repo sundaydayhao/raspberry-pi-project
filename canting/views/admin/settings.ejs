@@ -1,0 +1,106 @@
+<%- include('../partials/admin-top') %>
+
+<section class="content-grid">
+  <article class="panel-card">
+    <div class="panel-card__header">
+      <div>
+        <p class="page-eyebrow">展示参数</p>
+        <h3>基础设置</h3>
+      </div>
+    </div>
+
+    <form method="post" action="/admin/settings" class="form-stack">
+      <div class="form-grid">
+        <label class="field">
+          <span class="field__label">餐厅名称</span>
+          <input type="text" name="restaurantName" value="<%= settings.restaurantName %>" required>
+        </label>
+
+        <label class="field">
+          <span class="field__label">宣传副标题</span>
+          <input type="text" name="slogan" value="<%= settings.slogan %>" required>
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="field__label">滚动公告</span>
+        <textarea name="announcement" rows="3" required><%= settings.announcement %></textarea>
+      </label>
+
+      <div class="form-grid form-grid--four">
+        <label class="field">
+          <span class="field__label">货币符号</span>
+          <input type="text" name="currencySymbol" value="<%= settings.currencySymbol %>" maxlength="2">
+        </label>
+
+        <label class="field">
+          <span class="field__label">轮播秒数</span>
+          <input type="number" name="rotationSeconds" value="<%= settings.rotationSeconds %>" min="5" max="60" required>
+        </label>
+
+        <label class="field">
+          <span class="field__label">数据刷新秒数</span>
+          <input type="number" name="refreshSeconds" value="<%= settings.refreshSeconds %>" min="15" max="300" required>
+        </label>
+
+        <label class="field">
+          <span class="field__label">主色</span>
+          <input type="color" name="themeColor" value="<%= settings.themeColor %>">
+        </label>
+      </div>
+
+      <div class="form-grid form-grid--three">
+        <label class="field">
+          <span class="field__label">推荐区标题</span>
+          <input type="text" name="recommendedTitle" value="<%= settings.recommendedTitle %>" required>
+        </label>
+
+        <label class="field">
+          <span class="field__label">菜单区标题</span>
+          <input type="text" name="boardTitle" value="<%= settings.boardTitle %>" required>
+        </label>
+
+        <label class="field">
+          <span class="field__label">优惠区标题</span>
+          <input type="text" name="promoTitle" value="<%= settings.promoTitle %>" required>
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="field__label">强调色</span>
+        <input type="color" name="accentColor" value="<%= settings.accentColor %>">
+      </label>
+
+      <div class="form-actions">
+        <button type="submit" class="button button--primary">保存设置</button>
+      </div>
+    </form>
+  </article>
+
+  <article class="panel-card">
+    <div class="panel-card__header">
+      <div>
+        <p class="page-eyebrow">建议值</p>
+        <h3>门店展示建议</h3>
+      </div>
+    </div>
+
+    <div class="note-stack">
+      <div class="note-card">
+        <strong>轮播速度</strong>
+        <p>大屏展示建议设置为 8 到 12 秒，顾客在排队过程中更容易看清主打菜和优惠。</p>
+      </div>
+      <div class="note-card">
+        <strong>刷新频率</strong>
+        <p>如果后台编辑频繁，可设置为 30 到 60 秒；单店日常运营通常 45 秒已经足够。</p>
+      </div>
+      <div class="note-card">
+        <strong>色彩搭配</strong>
+        <p>暖色主色适合餐饮场景。强调色建议用于折扣角标、标签和重点价格。</p>
+      </div>
+    </div>
+  </article>
+</section>
+
+<%- include('../partials/admin-bottom') %>
+

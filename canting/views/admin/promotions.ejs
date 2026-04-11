@@ -1,0 +1,127 @@
+<%
+  const formData = editingPromotion || {
+    id: '',
+    title: '',
+    subtitle: '',
+    description: '',
+    badge: '活动推荐',
+    image: '',
+    enabled: true,
+    sortOrder: promotions.length + 1
+  };
+%>
+<%- include('../partials/admin-top') %>
+
+<section class="content-grid content-grid--wide">
+  <article class="panel-card">
+    <div class="panel-card__header">
+      <div>
+        <p class="page-eyebrow"><%= editingPromotion ? '编辑优惠' : '新增优惠' %></p>
+        <h3>优惠表单</h3>
+      </div>
+      <% if (editingPromotion) { %>
+        <a href="/admin/promotions" class="button button--ghost">取消编辑</a>
+      <% } %>
+    </div>
+
+    <form method="post" action="/admin/promotions/save" enctype="multipart/form-data" class="form-stack">
+      <input type="hidden" name="id" value="<%= formData.id %>">
+      <input type="hidden" name="existingImage" value="<%= formData.image || '' %>">
+
+      <div class="form-grid">
+        <label class="field">
+          <span class="field__label">优惠标题</span>
+          <input type="text" name="title" value="<%= formData.title %>" required>
+        </label>
+
+        <label class="field">
+          <span class="field__label">角标文案</span>
+          <input type="text" name="badge" value="<%= formData.badge %>" required>
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="field__label">副标题</span>
+        <input type="text" name="subtitle" value="<%= formData.subtitle %>" placeholder="例如：11:00 - 14:00 限时优惠">
+      </label>
+
+      <label class="field">
+        <span class="field__label">优惠说明</span>
+        <textarea name="description" rows="4"><%= formData.description %></textarea>
+      </label>
+
+      <div class="form-grid form-grid--three">
+        <label class="field">
+          <span class="field__label">排序</span>
+          <input type="number" min="0" name="sortOrder" value="<%= formData.sortOrder %>">
+        </label>
+
+        <label class="field">
+          <span class="field__label">图片地址</span>
+          <input type="url" name="imageUrl" placeholder="可填网络图片地址" value="">
+        </label>
+
+        <label class="field">
+          <span class="field__label">上传图片</span>
+          <input type="file" name="imageFile" accept="image/*">
+        </label>
+      </div>
+
+      <% if (formData.image) { %>
+        <div class="image-preview-card image-preview-card--banner">
+          <img src="<%= formData.image %>" alt="<%= formData.title %>">
+          <label class="checkbox-field">
+            <input type="checkbox" name="removeImage">
+            <span>保存时移除当前图片</span>
+          </label>
+        </div>
+      <% } %>
+
+      <label class="checkbox-field">
+        <input type="checkbox" name="enabled" <%= formData.enabled ? 'checked' : '' %>>
+        <span>启用该优惠</span>
+      </label>
+
+      <div class="form-actions">
+        <button type="submit" class="button button--primary"><%= editingPromotion ? '更新优惠' : '新增优惠' %></button>
+      </div>
+    </form>
+  </article>
+
+  <article class="panel-card">
+    <div class="panel-card__header">
+      <div>
+        <p class="page-eyebrow">优惠清单</p>
+        <h3>全部优惠</h3>
+      </div>
+    </div>
+
+    <div class="note-stack">
+      <% if (promotions.length === 0) { %>
+        <div class="table-empty">还没有优惠活动。</div>
+      <% } %>
+      <% promotions.forEach((promotion) => { %>
+        <div class="promo-mini-card promo-mini-card--list">
+          <div class="promo-mini-card__content">
+            <p class="promo-mini-card__badge"><%= promotion.badge || '活动推荐' %></p>
+            <strong><%= promotion.title %></strong>
+            <p><%= promotion.subtitle || '未填写副标题' %></p>
+            <p class="table-subtext"><%= promotion.description || '暂无说明' %></p>
+          </div>
+          <div class="promo-mini-card__actions">
+            <span class="status-badge <%= promotion.enabled ? 'status-badge--success' : 'status-badge--muted' %>">
+              <%= promotion.enabled ? '启用中' : '已停用' %>
+            </span>
+            <a href="/admin/promotions?edit=<%= promotion.id %>" class="button button--ghost button--small">编辑</a>
+            <form method="post" action="/admin/promotions/<%= promotion.id %>/delete" onsubmit="return confirm('确认删除该优惠？')">
+              <button type="submit" class="button button--danger button--small">删除</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </article>
+</section>
+
+<%- include('../partials/admin-bottom') %>
+

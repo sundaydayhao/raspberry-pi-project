@@ -1,0 +1,159 @@
+<%- include('../partials/admin-top') %>
+
+<section class="stats-grid">
+  <article class="stat-card">
+    <p class="stat-card__label">分类数量</p>
+    <strong class="stat-card__value"><%= counts.categories %></strong>
+    <span class="stat-card__hint">支持自由排序与颜色区分</span>
+  </article>
+  <article class="stat-card">
+    <p class="stat-card__label">菜品总数</p>
+    <strong class="stat-card__value"><%= counts.dishes %></strong>
+    <span class="stat-card__hint">当前上架 <%= counts.activeDishes %> 个</span>
+  </article>
+  <article class="stat-card">
+    <p class="stat-card__label">已启用优惠</p>
+    <strong class="stat-card__value"><%= counts.promotions %></strong>
+    <span class="stat-card__hint">支持轮播海报与文案推荐</span>
+  </article>
+  <article class="stat-card">
+    <p class="stat-card__label">推荐菜数量</p>
+    <strong class="stat-card__value"><%= counts.recommended %></strong>
+    <span class="stat-card__hint">用于首页重点突出展示</span>
+  </article>
+</section>
+
+<section class="content-grid">
+  <article class="panel-card">
+    <div class="panel-card__header">
+      <div>
+        <p class="page-eyebrow">快速入口</p>
+        <h3>常用操作</h3>
+      </div>
+    </div>
+
+    <div class="shortcut-grid">
+      <a class="shortcut-card" href="/admin/dishes">
+        <strong>新增菜品</strong>
+        <span>上传图片、设置价格和推荐标签</span>
+      </a>
+      <a class="shortcut-card" href="/admin/promotions">
+        <strong>编辑优惠</strong>
+        <span>配置套餐活动、限时折扣和引流文案</span>
+      </a>
+      <a class="shortcut-card" href="/admin/settings">
+        <strong>屏幕设置</strong>
+        <span>修改门店名称、轮播时长和主题色</span>
+      </a>
+      <a class="shortcut-card" href="/" target="_blank" rel="noreferrer">
+        <strong>打开展示屏</strong>
+        <span>前台页面适合浏览器全屏轮播显示</span>
+      </a>
+    </div>
+  </article>
+
+  <article class="panel-card">
+    <div class="panel-card__header">
+      <div>
+        <p class="page-eyebrow">部署提示</p>
+        <h3>树莓派运行建议</h3>
+      </div>
+    </div>
+
+    <div class="note-stack">
+      <div class="note-card">
+        <strong>应用服务</strong>
+        <p>Node 服务建议用 `systemd` 托管，掉线或重启后会自动恢复运行。</p>
+      </div>
+      <div class="note-card">
+        <strong>自动全屏</strong>
+        <p>可使用仓库里的 `deploy/canting-kiosk.sh` 配合 Chromium 启动展示页。</p>
+      </div>
+      <div class="note-card">
+        <strong>本地数据</strong>
+        <p>菜品与优惠内容保存在 `data/store.json`，适合门店单机部署。</p>
+      </div>
+    </div>
+  </article>
+</section>
+
+<section class="content-grid content-grid--balanced">
+  <article class="panel-card">
+    <div class="panel-card__header">
+      <div>
+        <p class="page-eyebrow">最近菜品</p>
+        <h3>菜单预览</h3>
+      </div>
+      <a href="/admin/dishes" class="button button--ghost">管理菜品</a>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>菜品</th>
+            <th>分类</th>
+            <th>价格</th>
+            <th>状态</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (latestDishes.length === 0) { %>
+            <tr>
+              <td colspan="4" class="table-empty">还没有菜品数据。</td>
+            </tr>
+          <% } %>
+          <% latestDishes.forEach((dish) => { %>
+            <tr>
+              <td>
+                <strong><%= dish.name %></strong>
+                <div class="table-subtext"><%= dish.description || '暂无描述' %></div>
+              </td>
+              <td><%= categoryNameById(categories, dish.categoryId) %></td>
+              <td><%= formatMoney(dish.price, store.settings.currencySymbol) %></td>
+              <td>
+                <span class="status-badge <%= dish.available ? 'status-badge--success' : 'status-badge--muted' %>">
+                  <%= dish.available ? '上架' : '下架' %>
+                </span>
+                <% if (dish.recommended) { %>
+                  <span class="status-badge status-badge--accent">推荐</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="panel-card">
+    <div class="panel-card__header">
+      <div>
+        <p class="page-eyebrow">最近优惠</p>
+        <h3>活动预览</h3>
+      </div>
+      <a href="/admin/promotions" class="button button--ghost">管理优惠</a>
+    </div>
+
+    <div class="note-stack">
+      <% if (latestPromotions.length === 0) { %>
+        <div class="table-empty">还没有优惠活动。</div>
+      <% } %>
+      <% latestPromotions.forEach((promotion) => { %>
+        <div class="promo-mini-card">
+          <div>
+            <p class="promo-mini-card__badge"><%= promotion.badge || '活动' %></p>
+            <strong><%= promotion.title %></strong>
+            <p><%= promotion.description || '暂无说明' %></p>
+          </div>
+          <span class="status-badge <%= promotion.enabled ? 'status-badge--success' : 'status-badge--muted' %>">
+            <%= promotion.enabled ? '启用中' : '已停用' %>
+          </span>
+        </div>
+      <% }) %>
+    </div>
+  </article>
+</section>
+
+<%- include('../partials/admin-bottom') %>
+

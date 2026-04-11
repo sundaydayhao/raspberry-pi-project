@@ -1,0 +1,195 @@
+<%
+  const formData = editingDish || {
+    id: '',
+    categoryId: categories[0]?.id || '',
+    name: '',
+    description: '',
+    price: '',
+    originalPrice: '',
+    image: '',
+    tags: [],
+    spicyLevel: 0,
+    recommended: true,
+    available: true,
+    sortOrder: dishes.length + 1
+  };
+%>
+<%- include('../partials/admin-top') %>
+
+<section class="content-grid content-grid--wide">
+  <article class="panel-card">
+    <div class="panel-card__header">
+      <div>
+        <p class="page-eyebrow"><%= editingDish ? '编辑菜品' : '新增菜品' %></p>
+        <h3>菜品表单</h3>
+      </div>
+      <% if (editingDish) { %>
+        <a href="/admin/dishes" class="button button--ghost">取消编辑</a>
+      <% } %>
+    </div>
+
+    <form method="post" action="/admin/dishes/save" enctype="multipart/form-data" class="form-stack">
+      <input type="hidden" name="id" value="<%= formData.id %>">
+      <input type="hidden" name="existingImage" value="<%= formData.image || '' %>">
+
+      <div class="form-grid">
+        <label class="field">
+          <span class="field__label">菜品名称</span>
+          <input type="text" name="name" value="<%= formData.name %>" required>
+        </label>
+
+        <label class="field">
+          <span class="field__label">所属分类</span>
+          <select name="categoryId">
+            <% categories.forEach((category) => { %>
+              <option value="<%= category.id %>" <%= formData.categoryId === category.id ? 'selected' : '' %>><%= category.name %></option>
+            <% }) %>
+          </select>
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="field__label">菜品描述</span>
+        <textarea name="description" rows="4"><%= formData.description %></textarea>
+      </label>
+
+      <div class="form-grid form-grid--four">
+        <label class="field">
+          <span class="field__label">现价</span>
+          <input type="number" step="0.01" min="0.01" name="price" value="<%= formData.price %>" required>
+        </label>
+
+        <label class="field">
+          <span class="field__label">原价</span>
+          <input type="number" step="0.01" min="0" name="originalPrice" value="<%= formData.originalPrice %>">
+        </label>
+
+        <label class="field">
+          <span class="field__label">辣度</span>
+          <input type="number" min="0" max="5" name="spicyLevel" value="<%= formData.spicyLevel %>">
+        </label>
+
+        <label class="field">
+          <span class="field__label">排序</span>
+          <input type="number" min="0" name="sortOrder" value="<%= formData.sortOrder %>">
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="field__label">标签</span>
+        <input type="text" name="tags" value="<%= Array.isArray(formData.tags) ? formData.tags.join(', ') : formData.tags %>" placeholder="例如：招牌, 热卖, 套餐">
+      </label>
+
+      <div class="form-grid">
+        <label class="field">
+          <span class="field__label">图片地址</span>
+          <input type="url" name="imageUrl" placeholder="可填网络图片地址" value="">
+        </label>
+
+        <label class="field">
+          <span class="field__label">上传图片</span>
+          <input type="file" name="imageFile" accept="image/*">
+        </label>
+      </div>
+
+      <% if (formData.image) { %>
+        <div class="image-preview-card">
+          <img src="<%= formData.image %>" alt="<%= formData.name %>">
+          <label class="checkbox-field">
+            <input type="checkbox" name="removeImage">
+            <span>保存时移除当前图片</span>
+          </label>
+        </div>
+      <% } %>
+
+      <div class="checkbox-grid">
+        <label class="checkbox-field">
+          <input type="checkbox" name="recommended" <%= formData.recommended ? 'checked' : '' %>>
+          <span>展示为推荐菜</span>
+        </label>
+
+        <label class="checkbox-field">
+          <input type="checkbox" name="available" <%= formData.available ? 'checked' : '' %>>
+          <span>当前上架</span>
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="button button--primary"><%= editingDish ? '更新菜品' : '新增菜品' %></button>
+      </div>
+    </form>
+  </article>
+
+  <article class="panel-card">
+    <div class="panel-card__header">
+      <div>
+        <p class="page-eyebrow">菜品清单</p>
+        <h3>全部菜品</h3>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>菜品</th>
+            <th>分类</th>
+            <th>价格</th>
+            <th>标签</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (dishes.length === 0) { %>
+            <tr>
+              <td colspan="6" class="table-empty">还没有菜品。</td>
+            </tr>
+          <% } %>
+          <% dishes.forEach((dish) => { %>
+            <tr>
+              <td>
+                <div class="dish-table-cell">
+                  <% if (dish.image) { %>
+                    <img src="<%= dish.image %>" alt="<%= dish.name %>" class="thumb">
+                  <% } else { %>
+                    <div class="thumb thumb--placeholder">无图</div>
+                  <% } %>
+                  <div>
+                    <strong><%= dish.name %></strong>
+                    <div class="table-subtext"><%= dish.description || '暂无描述' %></div>
+                  </div>
+                </div>
+              </td>
+              <td><%= categoryNameById(categories, dish.categoryId) %></td>
+              <td>
+                <strong><%= formatMoney(dish.price, store.settings.currencySymbol) %></strong>
+                <% if (dish.originalPrice > 0) { %>
+                  <div class="table-subtext">原价 <%= formatMoney(dish.originalPrice, store.settings.currencySymbol) %></div>
+                <% } %>
+              </td>
+              <td><%= Array.isArray(dish.tags) && dish.tags.length ? dish.tags.join(' / ') : '无' %></td>
+              <td>
+                <span class="status-badge <%= dish.available ? 'status-badge--success' : 'status-badge--muted' %>">
+                  <%= dish.available ? '上架' : '下架' %>
+                </span>
+                <% if (dish.recommended) { %>
+                  <span class="status-badge status-badge--accent">推荐</span>
+                <% } %>
+              </td>
+              <td class="table-actions">
+                <a href="/admin/dishes?edit=<%= dish.id %>" class="button button--ghost button--small">编辑</a>
+                <form method="post" action="/admin/dishes/<%= dish.id %>/delete" onsubmit="return confirm('确认删除该菜品？')">
+                  <button type="submit" class="button button--danger button--small">删除</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<%- include('../partials/admin-bottom') %>
+
