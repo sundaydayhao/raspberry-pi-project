@@ -5,504 +5,857 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>奶茶店展示屏</title>
     <style>
+        :root {
+            --screen-bg: #2c1b10;
+            --screen-text: #fff5eb;
+            --screen-muted: rgba(255, 245, 235, 0.78);
+            --screen-card: rgba(255, 248, 241, 0.14);
+            --screen-card-border: rgba(255, 231, 210, 0.2);
+            --screen-accent: #d8a163;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html,
         body {
-            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
             overflow: hidden;
-            background: #000;
+            cursor: none;
+            color: var(--screen-text);
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(255, 219, 172, 0.12), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(255, 197, 143, 0.16), transparent 34%),
+                linear-gradient(160deg, #26160e, #4a2d1a 48%, #1d120b);
+        }
+
+        .loading,
+        .error-message {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .loading {
+            gap: 20px;
+            background: rgba(21, 13, 8, 0.92);
+            z-index: 200;
+            font-size: 28px;
+            letter-spacing: 0.08em;
+        }
+
+        .loading-spinner {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: 6px solid rgba(255, 255, 255, 0.14);
+            border-top-color: rgba(255, 245, 235, 0.92);
+            animation: spin 1s linear infinite;
+        }
+
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 120;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 42px 0;
+            pointer-events: none;
+        }
+
+        .status-brand {
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 231, 210, 0.18);
+            background: rgba(255, 248, 241, 0.08);
+            color: var(--screen-muted);
+            font-size: 16px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+        }
+
+        .status-meta {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .status-pill {
+            min-width: 110px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 231, 210, 0.16);
+            background: rgba(255, 248, 241, 0.08);
+            text-align: center;
+            font-size: 18px;
+            color: var(--screen-muted);
+        }
+
+        .status-pill.time {
+            min-width: 132px;
+            font-size: 26px;
+            font-weight: 700;
+            color: #fff8f2;
         }
 
         .slideshow-container {
+            position: relative;
             width: 100vw;
             height: 100vh;
-            position: relative;
             overflow: hidden;
         }
 
         .slide {
             position: absolute;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            inset: 0;
             opacity: 0;
-            transition: opacity 1s ease-in-out;
-            padding: 60px;
-            text-align: center;
+            padding: 110px 54px 54px;
+            transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+            transform: scale(1.01);
         }
 
         .slide.active {
             opacity: 1;
+            transform: scale(1);
             z-index: 1;
         }
 
-        .slide-background {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .slide-shell {
+            position: relative;
             width: 100%;
             height: 100%;
-            z-index: -1;
+            border-radius: 36px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 231, 210, 0.08);
+            box-shadow: 0 28px 80px rgba(0, 0, 0, 0.24);
         }
 
-        .slide-image {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .slide-menu .slide-shell {
+            padding: 40px;
+            background:
+                linear-gradient(160deg, rgba(255, 250, 245, 0.08), rgba(255, 250, 245, 0.02)),
+                linear-gradient(150deg, rgba(123, 76, 38, 0.46), rgba(42, 24, 13, 0.88));
+            backdrop-filter: blur(16px);
+        }
+
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            align-items: flex-start;
+            margin-bottom: 28px;
+        }
+
+        .menu-kicker,
+        .promo-kicker {
+            margin-bottom: 14px;
+            color: rgba(255, 238, 221, 0.72);
+            font-size: 17px;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+        }
+
+        .menu-title {
+            font-size: 68px;
+            line-height: 1.08;
+            letter-spacing: 0.04em;
+        }
+
+        .menu-subtitle {
+            margin-top: 14px;
+            max-width: 860px;
+            color: var(--screen-muted);
+            font-size: 26px;
+            line-height: 1.6;
+        }
+
+        .page-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 12px 18px;
+            border-radius: 999px;
+            background: rgba(255, 248, 241, 0.08);
+            border: 1px solid rgba(255, 231, 210, 0.16);
+            color: rgba(255, 245, 235, 0.82);
+            font-size: 20px;
+            white-space: nowrap;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 22px;
+            height: calc(100% - 190px);
+        }
+
+        .product-card {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            border-radius: 28px;
+            overflow: hidden;
+            background: var(--screen-card);
+            border: 1px solid var(--screen-card-border);
+            backdrop-filter: blur(10px);
+        }
+
+        .product-visual {
+            position: relative;
+            height: 210px;
+            background:
+                radial-gradient(circle at top left, rgba(255, 236, 209, 0.36), transparent 34%),
+                linear-gradient(135deg, rgba(218, 178, 129, 0.82), rgba(133, 89, 48, 0.72));
+        }
+
+        .product-visual img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            opacity: 0.3;
         }
 
-        .slide-content {
-            position: relative;
-            z-index: 2;
-            color: white;
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
-            max-width: 1200px;
+        .product-fallback {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(54, 31, 15, 0.68);
+            font-size: 28px;
+            letter-spacing: 0.2em;
         }
 
-        .slide-title {
-            font-size: 120px;
-            font-weight: bold;
-            margin-bottom: 30px;
-            animation: fadeInDown 1s ease-out;
+        .product-price {
+            position: absolute;
+            right: 18px;
+            bottom: 18px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(35, 19, 10, 0.88);
+            color: #fff7ef;
+            font-size: 28px;
+            font-weight: 700;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
         }
 
-        .slide-subtitle {
-            font-size: 60px;
-            margin-bottom: 40px;
-            opacity: 0.95;
-            animation: fadeInUp 1s ease-out 0.2s both;
+        .product-body {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 22px 24px 24px;
         }
 
-        .slide-text {
-            font-size: 48px;
+        .product-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .product-chip,
+        .product-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .product-chip {
+            background: rgba(255, 248, 241, 0.14);
+            color: rgba(255, 245, 235, 0.82);
+        }
+
+        .product-tag {
+            background: rgba(216, 161, 99, 0.18);
+            color: #ffd7ab;
+        }
+
+        .product-name {
+            font-size: 34px;
+            line-height: 1.24;
+            margin-bottom: 10px;
+        }
+
+        .product-description {
+            color: var(--screen-muted);
+            font-size: 20px;
+            line-height: 1.7;
+        }
+
+        .menu-note {
+            position: absolute;
+            right: 34px;
+            bottom: 26px;
+            color: rgba(255, 245, 235, 0.58);
+            font-size: 16px;
+            letter-spacing: 0.08em;
+        }
+
+        .slide-promo .slide-shell {
+            background:
+                radial-gradient(circle at top left, var(--promo-color), transparent 58%),
+                linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(27, 17, 10, 0.96));
+        }
+
+        .promo-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.95fr);
+            height: 100%;
+        }
+
+        .promo-copy {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 70px;
+        }
+
+        .promo-title {
+            font-size: 108px;
+            line-height: 0.98;
+            letter-spacing: 0.04em;
+            margin-bottom: 18px;
+        }
+
+        .promo-subtitle {
+            font-size: 42px;
+            color: rgba(255, 245, 235, 0.88);
+            margin-bottom: 24px;
+        }
+
+        .promo-content {
+            max-width: 700px;
+            color: var(--screen-muted);
+            font-size: 28px;
             line-height: 1.8;
             white-space: pre-line;
-            opacity: 0.9;
-            animation: fadeIn 1s ease-out 0.4s both;
         }
 
-        .loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 36px;
+        .promo-media {
+            position: relative;
+            margin: 38px 38px 38px 0;
+            border-radius: 32px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 231, 210, 0.14);
+            background:
+                radial-gradient(circle at top left, rgba(255, 241, 226, 0.26), transparent 28%),
+                rgba(255, 248, 241, 0.1);
+        }
+
+        .promo-media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .promo-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 50px;
             text-align: center;
+            color: rgba(255, 245, 235, 0.78);
+            font-size: 34px;
+            line-height: 1.6;
+            letter-spacing: 0.12em;
         }
 
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 6px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+        .error-message {
+            z-index: 220;
+            background: rgba(42, 20, 14, 0.92);
+            color: #fff7f1;
+            gap: 16px;
+            font-size: 30px;
+            letter-spacing: 0.06em;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-50px);
+        @media (max-width: 1280px) {
+            .slide {
+                padding: 96px 34px 34px;
             }
-            to {
+
+            .slide-menu .slide-shell {
+                padding: 28px;
+            }
+
+            .menu-title {
+                font-size: 54px;
+            }
+
+            .menu-subtitle {
+                font-size: 22px;
+            }
+
+            .product-grid {
+                gap: 18px;
+                height: calc(100% - 170px);
+            }
+
+            .product-visual {
+                height: 180px;
+            }
+
+            .product-name {
+                font-size: 28px;
+            }
+
+            .product-description {
+                font-size: 18px;
+            }
+
+            .promo-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .promo-copy {
+                padding: 54px 46px 24px;
+            }
+
+            .promo-title {
+                font-size: 72px;
+            }
+
+            .promo-subtitle {
+                font-size: 32px;
+            }
+
+            .promo-content {
+                font-size: 22px;
+            }
+
+            .promo-media {
+                margin: 0 46px 46px;
+                min-height: 240px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            body {
+                overflow-y: auto;
+                cursor: default;
+            }
+
+            .slideshow-container {
+                height: auto;
+                overflow: visible;
+            }
+
+            .status-bar {
+                padding: 18px 18px 0;
+            }
+
+            .status-meta {
+                gap: 10px;
+            }
+
+            .status-pill {
+                min-width: auto;
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            .status-pill.time {
+                font-size: 18px;
+            }
+
+            .slide {
+                position: relative;
+                min-height: 100vh;
+                padding: 84px 16px 16px;
                 opacity: 1;
-                transform: translateY(0);
+                transform: none;
             }
-        }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
+            .slide-shell {
+                min-height: calc(100vh - 100px);
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+
+            .menu-header {
+                flex-direction: column;
+                margin-bottom: 18px;
             }
-        }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
+            .menu-title {
+                font-size: 36px;
             }
-            to {
-                opacity: 1;
+
+            .menu-subtitle {
+                font-size: 18px;
             }
-        }
 
-        .error-message {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 32px;
-            text-align: center;
-            background: rgba(255, 0, 0, 0.8);
-            padding: 40px 60px;
-            border-radius: 10px;
-        }
+            .product-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
 
-        /* 隐藏鼠标光标 */
-        body {
-            cursor: none;
-        }
+            .product-name {
+                font-size: 24px;
+            }
 
-        /* 信息栏样式 */
-        .info-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 80px;
-            background: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 100%);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 40px;
-            z-index: 100;
-            color: white;
-            font-size: 24px;
-        }
+            .product-description {
+                font-size: 16px;
+            }
 
-        .info-left {
-            display: flex;
-            align-items: center;
-            gap: 30px;
-        }
+            .promo-copy {
+                padding: 32px 24px 20px;
+            }
 
-        .info-right {
-            display: flex;
-            align-items: center;
-            gap: 30px;
-        }
+            .promo-title {
+                font-size: 44px;
+            }
 
-        .time-display {
-            font-size: 32px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-        }
+            .promo-subtitle {
+                font-size: 24px;
+            }
 
-        .date-display {
-            font-size: 20px;
-            opacity: 0.9;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-        }
+            .promo-content {
+                font-size: 18px;
+            }
 
-        .weather-display {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-size: 24px;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-        }
-
-        .weather-icon {
-            font-size: 36px;
-        }
-
-        .weather-temp {
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-        .weather-desc {
-            font-size: 20px;
-            opacity: 0.9;
-        }
-
-        .divider {
-            width: 2px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.3);
+            .promo-media {
+                margin: 0 24px 24px;
+            }
         }
     </style>
 </head>
 <body>
     <div id="loading" class="loading">
         <div class="loading-spinner"></div>
-        <div>加载中...</div>
+        <div>加载展示内容中</div>
+    </div>
+
+    <div id="status-bar" class="status-bar" style="display: none;">
+        <div class="status-brand">Milk Tea Menu</div>
+        <div class="status-meta">
+            <div id="slide-indicator" class="status-pill">1 / 1</div>
+            <div id="date-display" class="status-pill">2026-01-01</div>
+            <div id="time-display" class="status-pill time">00:00</div>
+        </div>
     </div>
 
     <div id="slideshow" class="slideshow-container" style="display: none;"></div>
 
-    <!-- 信息栏 -->
-    <div id="info-bar" class="info-bar" style="display: none;">
-        <div class="info-left">
-            <div class="time-display" id="time-display">00:00</div>
-            <div class="divider"></div>
-            <div class="date-display" id="date-display">2026年1月1日 星期一</div>
-        </div>
-        <div class="info-right">
-            <div class="weather-display" id="weather-display">
-                <span class="weather-icon">☀️</span>
-                <span class="weather-temp">--°C</span>
-                <span class="weather-desc">加载中...</span>
-            </div>
-        </div>
-    </div>
-
     <script>
+        const DEFAULT_SETTINGS = {
+            defaultDuration: 5,
+            autoPlay: true,
+            menuTitle: '本店热卖奶茶',
+            menuSubtitle: '支持少糖 / 去冰 / 加料定制',
+            productsPerPage: 6
+        };
+
         let slides = [];
         let currentSlide = 0;
         let slideInterval = null;
-        let settings = {};
+        let settings = { ...DEFAULT_SETTINGS };
 
-        // 加载内容
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatPrice(price) {
+            const text = String(price || '').trim();
+            if (!text) {
+                return '¥--';
+            }
+
+            return text.startsWith('¥') ? text : `¥${text}`;
+        }
+
+        function chunkArray(items, size) {
+            const result = [];
+            for (let index = 0; index < items.length; index += size) {
+                result.push(items.slice(index, index + size));
+            }
+            return result;
+        }
+
+        function sanitizeColor(color) {
+            const text = String(color || '').trim();
+            return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(text) ? text : '#8D5B32';
+        }
+
+        function buildSlides(data) {
+            const builtSlides = [];
+            const allProducts = Array.isArray(data.products) ? data.products : [];
+            const visibleProducts = allProducts.filter((product) => product && product.enabled !== false);
+            const productsPerPage = Math.max(1, parseInt(settings.productsPerPage, 10) || DEFAULT_SETTINGS.productsPerPage);
+
+            if (visibleProducts.length) {
+                const productPages = chunkArray(visibleProducts, productsPerPage);
+                productPages.forEach((products, index) => {
+                    builtSlides.push({
+                        id: `menu-${index + 1}`,
+                        type: 'menu',
+                        title: settings.menuTitle || DEFAULT_SETTINGS.menuTitle,
+                        subtitle: settings.menuSubtitle || DEFAULT_SETTINGS.menuSubtitle,
+                        products,
+                        page: index + 1,
+                        totalPages: productPages.length,
+                        duration: settings.defaultDuration
+                    });
+                });
+            }
+
+            const promoSlides = Array.isArray(data.slides) ? data.slides : [];
+            promoSlides.forEach((slide, index) => {
+                builtSlides.push({
+                    id: slide.id || `promo-${index + 1}`,
+                    type: 'promo',
+                    title: slide.title || '门店活动',
+                    subtitle: slide.subtitle || '',
+                    content: slide.content || '',
+                    image: slide.image || '',
+                    backgroundColor: sanitizeColor(slide.backgroundColor),
+                    duration: parseInt(slide.duration, 10) || settings.defaultDuration
+                });
+            });
+
+            return builtSlides;
+        }
+
         async function loadContent() {
             try {
                 const response = await fetch('/api/content');
                 const data = await response.json();
-                
-                slides = data.slides || [];
-                settings = data.settings || { defaultDuration: 5, autoPlay: true };
-                
-                if (slides.length === 0) {
-                    showError('没有可显示的内容');
+
+                settings = {
+                    ...DEFAULT_SETTINGS,
+                    ...(data.settings || {})
+                };
+                slides = buildSlides(data);
+
+                if (!slides.length) {
+                    showError('当前没有可展示的奶茶商品或轮播内容');
                     return;
                 }
-                
+
+                currentSlide = 0;
                 renderSlides();
                 startSlideshow();
-                
+
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('slideshow').style.display = 'block';
+                document.getElementById('status-bar').style.display = 'flex';
             } catch (error) {
                 console.error('加载内容失败:', error);
-                showError('加载内容失败，请检查网络连接');
+                showError('加载内容失败，请检查服务是否正常');
             }
         }
 
-        // 渲染幻灯片
         function renderSlides() {
             const container = document.getElementById('slideshow');
             container.innerHTML = '';
-            
+
             slides.forEach((slide, index) => {
-                const slideDiv = document.createElement('div');
-                slideDiv.className = 'slide';
-                if (index === 0) slideDiv.classList.add('active');
-                
-                // 背景
-                const background = document.createElement('div');
-                background.className = 'slide-background';
-                background.style.background = slide.backgroundColor || '#FF6B9D';
-                slideDiv.appendChild(background);
-                
-                // 背景图片
-                if (slide.image) {
-                    const img = document.createElement('img');
-                    img.className = 'slide-image';
-                    img.src = slide.image;
-                    img.onerror = () => {
-                        console.warn('图片加载失败:', slide.image);
-                    };
-                    slideDiv.appendChild(img);
+                const slideElement = document.createElement('section');
+                slideElement.className = `slide slide-${slide.type}`;
+                if (index === currentSlide) {
+                    slideElement.classList.add('active');
                 }
-                
-                // 内容
-                const content = document.createElement('div');
-                content.className = 'slide-content';
-                
-                if (slide.title) {
-                    const title = document.createElement('div');
-                    title.className = 'slide-title';
-                    title.textContent = slide.title;
-                    content.appendChild(title);
+
+                if (slide.type === 'menu') {
+                    slideElement.appendChild(createMenuSlide(slide));
+                } else {
+                    slideElement.appendChild(createPromoSlide(slide));
                 }
-                
-                if (slide.subtitle) {
-                    const subtitle = document.createElement('div');
-                    subtitle.className = 'slide-subtitle';
-                    subtitle.textContent = slide.subtitle;
-                    content.appendChild(subtitle);
-                }
-                
-                if (slide.content) {
-                    const text = document.createElement('div');
-                    text.className = 'slide-text';
-                    text.textContent = slide.content;
-                    content.appendChild(text);
-                }
-                
-                slideDiv.appendChild(content);
-                container.appendChild(slideDiv);
+
+                container.appendChild(slideElement);
             });
+
+            updateSlideIndicator();
         }
 
-        // 切换幻灯片
+        function createMenuSlide(slide) {
+            const shell = document.createElement('div');
+            shell.className = 'slide-shell';
+
+            const productCards = slide.products.map((product) => {
+                const imageMarkup = product.image
+                    ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name || '奶茶图片')}">`
+                    : '<div class="product-fallback">奶茶图片</div>';
+
+                return `
+                    <article class="product-card">
+                        <div class="product-visual">
+                            ${imageMarkup}
+                            <div class="product-price">${escapeHtml(formatPrice(product.price))}</div>
+                        </div>
+                        <div class="product-body">
+                            <div>
+                                <div class="product-top">
+                                    <span class="product-chip">${escapeHtml(product.category || '奶茶')}</span>
+                                    ${product.badge ? `<span class="product-tag">${escapeHtml(product.badge)}</span>` : ''}
+                                </div>
+                                <h3 class="product-name">${escapeHtml(product.name || '未命名商品')}</h3>
+                                <p class="product-description">${escapeHtml(product.description || '现制现饮，以门店实际供应为准')}</p>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            shell.innerHTML = `
+                <div class="menu-header">
+                    <div>
+                        <div class="menu-kicker">Store Menu</div>
+                        <h1 class="menu-title">${escapeHtml(slide.title)}</h1>
+                        <p class="menu-subtitle">${escapeHtml(slide.subtitle || '')}</p>
+                    </div>
+                    <div class="page-badge">菜单 ${slide.page} / ${slide.totalPages}</div>
+                </div>
+                <div class="product-grid">${productCards}</div>
+                <div class="menu-note">商品价格和供应情况以门店实际售卖为准</div>
+            `;
+
+            return shell;
+        }
+
+        function createPromoSlide(slide) {
+            const shell = document.createElement('div');
+            shell.className = 'slide-shell';
+            shell.style.setProperty('--promo-color', slide.backgroundColor || '#8D5B32');
+
+            const mediaMarkup = slide.image
+                ? `<img src="${escapeHtml(slide.image)}" alt="${escapeHtml(slide.title || '宣传图片')}">`
+                : '<div class="promo-placeholder">门店活动<br>新品推荐<br>欢迎语</div>';
+
+            shell.innerHTML = `
+                <div class="promo-layout">
+                    <div class="promo-copy">
+                        <div class="promo-kicker">Store Highlight</div>
+                        <h2 class="promo-title">${escapeHtml(slide.title || '门店活动')}</h2>
+                        ${slide.subtitle ? `<div class="promo-subtitle">${escapeHtml(slide.subtitle)}</div>` : ''}
+                        ${slide.content ? `<div class="promo-content">${escapeHtml(slide.content)}</div>` : ''}
+                    </div>
+                    <div class="promo-media">
+                        ${mediaMarkup}
+                    </div>
+                </div>
+            `;
+
+            return shell;
+        }
+
         function showSlide(index) {
-            const slideElements = document.querySelectorAll('.slide');
-            slideElements.forEach(slide => slide.classList.remove('active'));
-            
-            if (slideElements[index]) {
-                slideElements[index].classList.add('active');
+            const allSlides = document.querySelectorAll('.slide');
+            allSlides.forEach((slideElement) => slideElement.classList.remove('active'));
+
+            if (allSlides[index]) {
+                allSlides[index].classList.add('active');
             }
+
+            updateSlideIndicator();
         }
 
-        // 下一张幻灯片
+        function updateSlideIndicator() {
+            const current = slides.length ? currentSlide + 1 : 0;
+            document.getElementById('slide-indicator').textContent = `${current} / ${slides.length || 0}`;
+        }
+
         function nextSlide() {
+            if (!slides.length) {
+                return;
+            }
+
             currentSlide = (currentSlide + 1) % slides.length;
             showSlide(currentSlide);
         }
 
-        // 开始幻灯片播放
         function startSlideshow() {
-            if (!settings.autoPlay) return;
-            
             if (slideInterval) {
                 clearInterval(slideInterval);
             }
-            
-            const duration = (slides[currentSlide]?.duration || settings.defaultDuration) * 1000;
-            
+
+            if (!settings.autoPlay || slides.length <= 1) {
+                return;
+            }
+
+            const duration = (slides[currentSlide]?.duration || settings.defaultDuration || DEFAULT_SETTINGS.defaultDuration) * 1000;
             slideInterval = setInterval(() => {
                 nextSlide();
-                // 重新设置定时器以适应不同的持续时间
                 startSlideshow();
             }, duration);
         }
 
-        // 显示错误信息
         function showError(message) {
             document.getElementById('loading').style.display = 'none';
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error-message';
-            errorDiv.textContent = message;
+            errorDiv.innerHTML = `
+                <div>${escapeHtml(message)}</div>
+                <div style="font-size: 18px; color: rgba(255, 245, 235, 0.7);">请在管理后台配置奶茶商品、图片和价格</div>
+            `;
             document.body.appendChild(errorDiv);
         }
 
-        // 定期刷新内容（每5分钟）
         function scheduleRefresh() {
             setInterval(() => {
-                console.log('刷新内容...');
                 loadContent();
             }, 5 * 60 * 1000);
         }
 
-        // 更新时间显示
-        function updateTime() {
+        function updateClock() {
             const now = new Date();
-            
-            // 更新时间
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('time-display').textContent = `${hours}:${minutes}`;
-            
-            // 更新日期
             const year = now.getFullYear();
-            const month = now.getMonth() + 1;
-            const date = now.getDate();
-            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-            const weekday = weekdays[now.getDay()];
-            document.getElementById('date-display').textContent = `${year}年${month}月${date}日 ${weekday}`;
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+
+            document.getElementById('time-display').textContent = `${hours}:${minutes}`;
+            document.getElementById('date-display').textContent = `${year}-${month}-${day}`;
         }
 
-        // 获取天气图标
-        function getWeatherIcon(weather) {
-            const iconMap = {
-                '晴': '☀️',
-                '多云': '⛅',
-                '阴': '☁️',
-                '雨': '🌧️',
-                '雪': '❄️',
-                '雷': '⛈️',
-                '雾': '🌫️',
-                '霾': '😷'
-            };
-            
-            for (const key in iconMap) {
-                if (weather.includes(key)) {
-                    return iconMap[key];
-                }
-            }
-            return '🌤️';
-        }
-
-        // 获取天气信息（使用免费天气API）
-        async function updateWeather() {
-            try {
-                // 使用高德天气API（需要申请免费key）
-                // 这里使用模拟数据，实际使用时需要替换为真实API
-                // const response = await fetch('https://restapi.amap.com/v3/weather/weatherInfo?city=城市代码&key=你的key');
-                
-                // 模拟天气数据
-                const weatherData = {
-                    temperature: Math.floor(Math.random() * 15) + 15, // 15-30度
-                    weather: ['晴', '多云', '阴', '小雨'][Math.floor(Math.random() * 4)],
-                    city: '本地'
-                };
-                
-                // 更新天气显示
-                const weatherDisplay = document.getElementById('weather-display');
-                const icon = getWeatherIcon(weatherData.weather);
-                
-                weatherDisplay.innerHTML = `
-                    <span class="weather-icon">${icon}</span>
-                    <span class="weather-temp">${weatherData.temperature}°C</span>
-                    <span class="weather-desc">${weatherData.weather}</span>
-                `;
-            } catch (error) {
-                console.error('获取天气失败:', error);
-                // 显示默认天气
-                document.getElementById('weather-display').innerHTML = `
-                    <span class="weather-icon">🌤️</span>
-                    <span class="weather-temp">--°C</span>
-                    <span class="weather-desc">天气</span>
-                `;
-            }
-        }
-
-        // 初始化信息栏
-        function initInfoBar() {
-            // 显示信息栏
-            document.getElementById('info-bar').style.display = 'flex';
-            
-            // 立即更新一次
-            updateTime();
-            updateWeather();
-            
-            // 每秒更新时间
-            setInterval(updateTime, 1000);
-            
-            // 每30分钟更新天气
-            setInterval(updateWeather, 30 * 60 * 1000);
-        }
-
-        // 页面加载完成后初始化
         window.addEventListener('load', () => {
             loadContent();
             scheduleRefresh();
-            initInfoBar();
+            updateClock();
+            setInterval(updateClock, 1000);
         });
 
-        // 键盘控制（用于调试）
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight') {
+        document.addEventListener('keydown', (event) => {
+            if (!slides.length) {
+                return;
+            }
+
+            if (event.key === 'ArrowRight') {
                 nextSlide();
                 startSlideshow();
-            } else if (e.key === 'ArrowLeft') {
+            } else if (event.key === 'ArrowLeft') {
                 currentSlide = (currentSlide - 1 + slides.length) % slides.length;
                 showSlide(currentSlide);
                 startSlideshow();
-            } else if (e.key === 'r' || e.key === 'R') {
+            } else if (event.key === 'r' || event.key === 'R') {
                 location.reload();
             }
         });

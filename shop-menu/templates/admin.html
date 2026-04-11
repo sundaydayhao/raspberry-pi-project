@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>奶茶店展示系统 - 管理后台</title>
     <style>
+        :root {
+            --bg-start: #f6efe5;
+            --bg-end: #e9dcc7;
+            --panel-bg: rgba(255, 250, 244, 0.92);
+            --panel-border: rgba(126, 79, 37, 0.14);
+            --text-main: #3c2415;
+            --text-subtle: #76553a;
+            --accent: #8d5b32;
+            --accent-strong: #6e4422;
+            --success: #2e7d32;
+            --danger: #c0392b;
+            --muted: #8a7b6d;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,168 +26,337 @@
         }
 
         body {
-            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at top left, rgba(255, 255, 255, 0.45), transparent 30%),
+                linear-gradient(140deg, var(--bg-start), var(--bg-end));
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1280px;
             margin: 0 auto;
         }
 
         .header {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            padding: 32px;
+            border: 1px solid var(--panel-border);
+            border-radius: 28px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 20px 40px rgba(92, 60, 29, 0.12);
         }
 
         .header h1 {
-            color: #333;
-            font-size: 32px;
+            font-size: 34px;
             margin-bottom: 10px;
+            letter-spacing: 0.04em;
         }
 
         .header p {
-            color: #666;
-            font-size: 16px;
+            color: var(--text-subtle);
+            font-size: 15px;
+            line-height: 1.7;
         }
 
         .tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 22px 0;
         }
 
         .tab-button {
-            background: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 8px;
+            border: 0;
+            padding: 14px 22px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.76);
+            color: var(--text-main);
             cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            transition: all 0.3s;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 15px;
+            font-weight: 600;
+            transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+            box-shadow: 0 10px 24px rgba(92, 60, 29, 0.08);
         }
 
         .tab-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            transform: translateY(-1px);
         }
 
         .tab-button.active {
-            background: #667eea;
-            color: white;
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: #fff7ef;
         }
 
         .tab-content {
             display: none;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 28px;
+            border: 1px solid var(--panel-border);
+            border-radius: 28px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 20px 40px rgba(92, 60, 29, 0.1);
         }
 
         .tab-content.active {
             display: block;
         }
 
-        .slide-list {
-            margin-bottom: 20px;
+        .message {
+            display: none;
+            margin-bottom: 18px;
+            padding: 14px 18px;
+            border-radius: 16px;
+            font-size: 14px;
         }
 
-        .slide-item {
-            background: #f8f9fa;
-            padding: 20px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
+        .message.active {
+            display: block;
         }
 
-        .slide-item h3 {
-            color: #333;
-            margin-bottom: 10px;
+        .message.success {
+            background: rgba(46, 125, 50, 0.12);
+            color: var(--success);
+            border: 1px solid rgba(46, 125, 50, 0.18);
         }
 
-        .slide-item p {
-            color: #666;
-            margin-bottom: 5px;
+        .message.error {
+            background: rgba(192, 57, 43, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(192, 57, 43, 0.18);
         }
 
-        .slide-actions {
-            margin-top: 15px;
+        .toolbar {
             display: flex;
-            gap: 10px;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
         }
 
         .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
+            border: 0;
+            padding: 12px 18px;
+            border-radius: 14px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s;
+            font-weight: 600;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
         }
 
         .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5568d3;
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: #fff8f1;
         }
 
         .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #218838;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #c82333;
+            background: #356859;
+            color: #f9f6f1;
         }
 
         .btn-secondary {
-            background: #6c757d;
-            color: white;
+            background: #d8c3a5;
+            color: #4e3422;
         }
 
-        .btn-secondary:hover {
-            background: #5a6268;
+        .btn-danger {
+            background: #b84035;
+            color: #fff8f4;
+        }
+
+        .section-card {
+            margin-top: 26px;
+            padding: 22px;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.68);
+            border: 1px solid rgba(126, 79, 37, 0.12);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            align-items: flex-end;
+            margin-bottom: 18px;
+        }
+
+        .section-header h2 {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .section-header p {
+            color: var(--text-subtle);
+            font-size: 14px;
+        }
+
+        .product-list,
+        .slide-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .product-list {
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        }
+
+        .product-item,
+        .slide-item,
+        .wifi-network {
+            border-radius: 20px;
+            overflow: hidden;
+            background: #fffdf9;
+            border: 1px solid rgba(126, 79, 37, 0.12);
+            box-shadow: 0 14px 28px rgba(92, 60, 29, 0.08);
+        }
+
+        .product-image {
+            position: relative;
+            height: 180px;
+            background: linear-gradient(135deg, #efe0ce, #d9bc94);
+            overflow: hidden;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(76, 49, 25, 0.68);
+            font-size: 18px;
+            letter-spacing: 0.14em;
+        }
+
+        .product-price-badge {
+            position: absolute;
+            right: 14px;
+            bottom: 14px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(60, 36, 21, 0.9);
+            color: #fff8ef;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .product-body,
+        .slide-body {
+            padding: 18px;
+        }
+
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .product-category,
+        .product-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .product-category {
+            background: rgba(141, 91, 50, 0.12);
+            color: var(--accent-strong);
+        }
+
+        .product-status {
+            background: rgba(53, 104, 89, 0.12);
+            color: #356859;
+        }
+
+        .product-status.offline {
+            background: rgba(184, 64, 53, 0.12);
+            color: var(--danger);
+        }
+
+        .product-item h3,
+        .slide-item h3 {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .product-item p,
+        .slide-item p,
+        .wifi-info p {
+            color: var(--text-subtle);
+            line-height: 1.65;
+            font-size: 14px;
+        }
+
+        .product-badge {
+            margin-top: 12px;
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .slide-item {
+            border-left: 6px solid var(--accent);
+        }
+
+        .slide-actions,
+        .product-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .empty-state {
+            padding: 36px 20px;
+            border-radius: 18px;
+            text-align: center;
+            color: var(--muted);
+            background: rgba(216, 195, 165, 0.2);
+            border: 1px dashed rgba(126, 79, 37, 0.16);
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
+            color: var(--text-main);
+            font-weight: 600;
         }
 
         .form-group input,
         .form-group textarea,
         .form-group select {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 12px 14px;
+            border: 1px solid rgba(126, 79, 37, 0.18);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--text-main);
             font-size: 14px;
             font-family: inherit;
         }
@@ -190,23 +373,31 @@
         }
 
         .color-picker-group input[type="color"] {
-            width: 60px;
-            height: 40px;
-            border: none;
+            width: 68px;
+            padding: 4px;
             cursor: pointer;
+        }
+
+        .form-check {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            color: var(--text-subtle);
+        }
+
+        .form-check input {
+            width: auto;
         }
 
         .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            inset: 0;
             z-index: 1000;
+            padding: 24px;
             align-items: center;
             justify-content: center;
+            background: rgba(34, 20, 10, 0.48);
         }
 
         .modal.active {
@@ -214,126 +405,98 @@
         }
 
         .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 90vh;
+            width: min(720px, 100%);
+            max-height: 92vh;
             overflow-y: auto;
+            padding: 28px;
+            border-radius: 28px;
+            border: 1px solid rgba(126, 79, 37, 0.16);
+            background: #fffaf4;
+            box-shadow: 0 26px 52px rgba(34, 20, 10, 0.22);
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
+            gap: 16px;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 22px;
         }
 
         .modal-header h2 {
-            color: #333;
+            font-size: 28px;
         }
 
         .close-btn {
-            background: none;
-            border: none;
-            font-size: 28px;
+            border: 0;
+            background: transparent;
+            color: var(--muted);
+            font-size: 30px;
             cursor: pointer;
-            color: #999;
         }
 
-        .close-btn:hover {
-            color: #333;
-        }
-
-        .message {
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .message.active {
-            display: block;
+        .modal-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
         }
 
         .preview-image {
-            max-width: 100%;
-            max-height: 200px;
-            margin-top: 10px;
-            border-radius: 5px;
+            width: 100%;
+            max-height: 260px;
+            object-fit: cover;
+            border-radius: 18px;
+            margin-top: 12px;
+            border: 1px solid rgba(126, 79, 37, 0.12);
         }
 
         .wifi-network {
-            background: #f8f9fa;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-
-        .wifi-info {
-            flex: 1;
+            gap: 16px;
+            padding: 16px 18px;
+            margin-top: 12px;
         }
 
         .wifi-info h4 {
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .wifi-info p {
-            color: #666;
-            font-size: 14px;
+            margin-bottom: 6px;
         }
 
         .signal-strength {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
             margin-left: 10px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
         }
 
         .signal-strong {
-            background: #28a745;
-            color: white;
+            background: rgba(46, 125, 50, 0.14);
+            color: var(--success);
         }
 
         .signal-medium {
-            background: #ffc107;
-            color: #333;
+            background: rgba(208, 150, 38, 0.16);
+            color: #a66a09;
         }
 
         .signal-weak {
-            background: #dc3545;
-            color: white;
+            background: rgba(192, 57, 43, 0.12);
+            color: var(--danger);
         }
 
         .loading-overlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            inset: 0;
             z-index: 2000;
             align-items: center;
             justify-content: center;
+            background: rgba(34, 20, 10, 0.45);
         }
 
         .loading-overlay.active {
@@ -341,322 +504,675 @@
         }
 
         .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 6px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            border: 6px solid rgba(255, 255, 255, 0.22);
+            border-top-color: #fff7f0;
+            animation: spin 0.9s linear infinite;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+
+            .header,
+            .tab-content {
+                padding: 22px;
+            }
+
+            .modal {
+                padding: 12px;
+            }
+
+            .modal-content {
+                padding: 22px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🧋 奶茶店展示系统</h1>
-            <p>管理后台 - 轻松管理您的展示内容</p>
+            <h1>奶茶店展示系统</h1>
+            <p>在这里维护门店奶茶商品、图片和价格，同时保留宣传轮播页面。保存后，展示屏会自动读取最新内容。</p>
         </div>
 
         <div class="tabs">
-            <button class="tab-button active" onclick="switchTab('content')">内容管理</button>
-            <button class="tab-button" onclick="switchTab('wifi')">WiFi配置</button>
-            <button class="tab-button" onclick="switchTab('settings')">系统设置</button>
+            <button class="tab-button active" onclick="switchTab('content', event)">内容管理</button>
+            <button class="tab-button" onclick="switchTab('wifi', event)">WiFi配置</button>
+            <button class="tab-button" onclick="switchTab('settings', event)">系统设置</button>
         </div>
 
-        <!-- 内容管理标签页 -->
         <div id="content-tab" class="tab-content active">
             <div id="message" class="message"></div>
-            
-            <div style="margin-bottom: 20px;">
-                <button class="btn btn-primary" onclick="openAddSlideModal()">➕ 添加新幻灯片</button>
-                <button class="btn btn-success" onclick="saveAllContent()">💾 保存所有更改</button>
-                <button class="btn btn-secondary" onclick="previewDisplay()">👁️ 预览展示</button>
+
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="openAddProductModal()">新增奶茶商品</button>
+                <button class="btn btn-secondary" onclick="openAddSlideModal()">新增宣传轮播</button>
+                <button class="btn btn-success" onclick="saveAllContent()">保存全部内容</button>
+                <button class="btn btn-secondary" onclick="previewDisplay()">预览展示页</button>
             </div>
 
-            <div id="slide-list" class="slide-list"></div>
+            <section class="section-card">
+                <div class="section-header">
+                    <div>
+                        <h2>奶茶商品</h2>
+                        <p>展示给顾客看的商品卡片，支持名称、价格、图片、标签和上下架。</p>
+                    </div>
+                </div>
+                <div id="product-list" class="product-list"></div>
+            </section>
+
+            <section class="section-card">
+                <div class="section-header">
+                    <div>
+                        <h2>宣传轮播</h2>
+                        <p>用于欢迎语、活动信息、新品推荐等整屏轮播内容。</p>
+                    </div>
+                </div>
+                <div id="slide-list" class="slide-list"></div>
+            </section>
         </div>
 
-        <!-- WiFi配置标签页 -->
         <div id="wifi-tab" class="tab-content">
             <div id="wifi-message" class="message"></div>
-            
-            <div class="form-group">
-                <h3>当前WiFi状态</h3>
-                <div id="wifi-status" style="padding: 15px; background: #f8f9fa; border-radius: 5px; margin-top: 10px;">
-                    <p>加载中...</p>
+
+            <section class="section-card" style="margin-top: 0;">
+                <div class="section-header">
+                    <div>
+                        <h2>当前WiFi状态</h2>
+                        <p>展示屏联网后，手机和树莓派在同一局域网即可访问后台。</p>
+                    </div>
                 </div>
+                <div id="wifi-status" class="empty-state">加载中...</div>
+            </section>
+
+            <div class="toolbar" style="margin-top: 20px; margin-bottom: 0;">
+                <button class="btn btn-primary" onclick="scanWiFi()">扫描WiFi网络</button>
             </div>
 
-            <div style="margin: 20px 0;">
-                <button class="btn btn-primary" onclick="scanWiFi()">🔍 扫描WiFi网络</button>
-            </div>
-
-            <div id="wifi-networks"></div>
+            <section class="section-card">
+                <div class="section-header">
+                    <div>
+                        <h2>可用网络</h2>
+                        <p>扫描后选择要连接的无线网络。</p>
+                    </div>
+                </div>
+                <div id="wifi-networks"></div>
+            </section>
         </div>
 
-        <!-- 系统设置标签页 -->
         <div id="settings-tab" class="tab-content">
-            <h3>显示设置</h3>
-            <div class="form-group">
-                <label>默认轮播时间（秒）</label>
-                <input type="number" id="default-duration" min="1" max="60" value="5">
-            </div>
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="auto-play" checked>
-                    自动播放
-                </label>
-            </div>
-            <button class="btn btn-success" onclick="saveSettings()">保存设置</button>
+            <section class="section-card" style="margin-top: 0;">
+                <div class="section-header">
+                    <div>
+                        <h2>显示设置</h2>
+                        <p>控制商品页标题、每页显示数量和轮播节奏。</p>
+                    </div>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label for="menu-title">商品页标题</label>
+                        <input type="text" id="menu-title" placeholder="例如：本店热卖奶茶">
+                    </div>
+                    <div class="form-group">
+                        <label for="menu-subtitle">商品页副标题</label>
+                        <input type="text" id="menu-subtitle" placeholder="例如：支持少糖 / 去冰 / 加料定制">
+                    </div>
+                    <div class="form-group">
+                        <label for="products-per-page">每页显示商品数</label>
+                        <input type="number" id="products-per-page" min="1" max="12" value="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="default-duration">默认轮播时间（秒）</label>
+                        <input type="number" id="default-duration" min="1" max="60" value="5">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-check">
+                        <input type="checkbox" id="auto-play" checked>
+                        自动轮播展示页
+                    </label>
+                </div>
+
+                <div class="toolbar" style="margin-bottom: 0;">
+                    <button class="btn btn-success" onclick="saveSettings()">保存设置</button>
+                </div>
+            </section>
         </div>
     </div>
 
-    <!-- 编辑幻灯片模态框 -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="product-modal-title">新增奶茶商品</h2>
+                <button class="close-btn" onclick="closeProductModal()">&times;</button>
+            </div>
+
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label for="product-name">商品名称</label>
+                        <input type="text" id="product-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-price">商品价格</label>
+                        <input type="text" id="product-price" placeholder="例如：16" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-category">商品分类</label>
+                        <input type="text" id="product-category" placeholder="例如：经典奶茶">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-badge">商品标签</label>
+                        <input type="text" id="product-badge" placeholder="例如：热销 / 新品 / 招牌">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="product-description">商品描述</label>
+                    <textarea id="product-description" placeholder="简短描述商品的口味、原料或卖点"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="product-image-file">商品图片</label>
+                    <input type="file" id="product-image-file" accept="image/*" onchange="uploadImage(this, 'product-image', 'product-image-preview')">
+                    <input type="hidden" id="product-image">
+                    <img id="product-image-preview" class="preview-image" style="display: none;" alt="商品预览图">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-check">
+                        <input type="checkbox" id="product-enabled" checked>
+                        在展示页显示该商品
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">保存商品</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeProductModal()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="slide-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modal-title">添加幻灯片</h2>
+                <h2 id="slide-modal-title">新增宣传轮播</h2>
                 <button class="close-btn" onclick="closeSlideModal()">&times;</button>
             </div>
+
             <form id="slide-form">
                 <input type="hidden" id="slide-id">
-                <div class="form-group">
-                    <label>标题</label>
-                    <input type="text" id="slide-title" required>
-                </div>
-                <div class="form-group">
-                    <label>副标题</label>
-                    <input type="text" id="slide-subtitle">
-                </div>
-                <div class="form-group">
-                    <label>内容</label>
-                    <textarea id="slide-content"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>背景颜色</label>
-                    <div class="color-picker-group">
-                        <input type="color" id="slide-color" value="#FF6B9D">
-                        <input type="text" id="slide-color-text" value="#FF6B9D">
+
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label for="slide-title">主标题</label>
+                        <input type="text" id="slide-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="slide-subtitle">副标题</label>
+                        <input type="text" id="slide-subtitle">
                     </div>
                 </div>
+
                 <div class="form-group">
-                    <label>背景图片</label>
-                    <input type="file" id="slide-image-file" accept="image/*" onchange="previewImage(this)">
+                    <label for="slide-content">内容说明</label>
+                    <textarea id="slide-content"></textarea>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label>背景颜色</label>
+                        <div class="color-picker-group">
+                            <input type="color" id="slide-color" value="#8D5B32">
+                            <input type="text" id="slide-color-text" value="#8D5B32">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="slide-duration">显示时长（秒）</label>
+                        <input type="number" id="slide-duration" min="1" max="60" value="5">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="slide-image-file">背景图片</label>
+                    <input type="file" id="slide-image-file" accept="image/*" onchange="uploadImage(this, 'slide-image', 'slide-image-preview')">
                     <input type="hidden" id="slide-image">
-                    <img id="image-preview" class="preview-image" style="display: none;">
+                    <img id="slide-image-preview" class="preview-image" style="display: none;" alt="轮播预览图">
                 </div>
-                <div class="form-group">
-                    <label>显示时长（秒）</label>
-                    <input type="number" id="slide-duration" min="1" max="60" value="5">
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <button type="submit" class="btn btn-primary">保存</button>
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">保存轮播</button>
                     <button type="button" class="btn btn-secondary" onclick="closeSlideModal()">取消</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- WiFi密码输入模态框 -->
     <div id="wifi-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>连接WiFi</h2>
                 <button class="close-btn" onclick="closeWiFiModal()">&times;</button>
             </div>
+
             <div class="form-group">
-                <label>网络名称</label>
+                <label for="wifi-ssid">网络名称</label>
                 <input type="text" id="wifi-ssid" readonly>
             </div>
+
             <div class="form-group">
-                <label>密码</label>
+                <label for="wifi-password">密码</label>
                 <input type="password" id="wifi-password">
             </div>
-            <div style="display: flex; gap: 10px;">
+
+            <div class="modal-actions">
                 <button class="btn btn-primary" onclick="connectWiFi()">连接</button>
                 <button class="btn btn-secondary" onclick="closeWiFiModal()">取消</button>
             </div>
         </div>
     </div>
 
-    <!-- 加载遮罩 -->
     <div id="loading-overlay" class="loading-overlay">
         <div class="loading-spinner"></div>
     </div>
 
     <script>
-        let contentData = { slides: [], settings: {} };
+        let contentData = { slides: [], products: [], settings: {} };
+        let currentEditingProduct = null;
         let currentEditingSlide = null;
 
-        // 页面加载时初始化
         window.addEventListener('load', () => {
             loadContent();
             loadWiFiStatus();
-            
-            // 颜色选择器同步
-            document.getElementById('slide-color').addEventListener('input', (e) => {
-                document.getElementById('slide-color-text').value = e.target.value;
+
+            document.getElementById('slide-color').addEventListener('input', (event) => {
+                document.getElementById('slide-color-text').value = event.target.value;
             });
-            document.getElementById('slide-color-text').addEventListener('input', (e) => {
-                document.getElementById('slide-color').value = e.target.value;
+
+            document.getElementById('slide-color-text').addEventListener('input', (event) => {
+                document.getElementById('slide-color').value = event.target.value || '#8D5B32';
             });
-            
-            // 表单提交
-            document.getElementById('slide-form').addEventListener('submit', (e) => {
-                e.preventDefault();
+
+            document.getElementById('product-form').addEventListener('submit', (event) => {
+                event.preventDefault();
+                saveProduct();
+            });
+
+            document.getElementById('slide-form').addEventListener('submit', (event) => {
+                event.preventDefault();
                 saveSlide();
             });
         });
 
-        // 切换标签页
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            document.getElementById(tabName + '-tab').classList.add('active');
-            
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatPrice(price) {
+            const text = String(price || '').trim();
+            if (!text) {
+                return '未设置';
+            }
+
+            return text.startsWith('¥') ? text : `¥${text}`;
+        }
+
+        function switchTab(tabName, event) {
+            document.querySelectorAll('.tab-button').forEach((button) => button.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach((content) => content.classList.remove('active'));
+
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
+
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+
             if (tabName === 'wifi') {
                 loadWiFiStatus();
             }
         }
 
-        // 加载内容
         async function loadContent() {
             try {
                 showLoading();
                 const response = await fetch('/api/admin/content');
                 const result = await response.json();
-                
+
                 if (result.success) {
-                    contentData = result.data;
+                    contentData = {
+                        slides: Array.isArray(result.data.slides) ? result.data.slides : [],
+                        products: Array.isArray(result.data.products) ? result.data.products : [],
+                        settings: result.data.settings || {}
+                    };
+                    renderProducts();
                     renderSlides();
                     loadSettings();
+                } else {
+                    showMessage('加载内容失败: ' + (result.message || '未知错误'), 'error');
                 }
-                hideLoading();
             } catch (error) {
                 console.error('加载内容失败:', error);
-                showMessage('加载内容失败', 'error');
+                showMessage('加载内容失败: ' + error.message, 'error');
+            } finally {
                 hideLoading();
             }
         }
 
-        // 渲染幻灯片列表
-        function renderSlides() {
-            const container = document.getElementById('slide-list');
+        function renderProducts() {
+            const container = document.getElementById('product-list');
             container.innerHTML = '';
-            
-            if (contentData.slides.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">暂无幻灯片，点击上方按钮添加</p>';
+
+            if (!contentData.products.length) {
+                container.innerHTML = '<div class="empty-state">还没有奶茶商品，点击上方“新增奶茶商品”开始添加。</div>';
                 return;
             }
-            
-            contentData.slides.forEach((slide, index) => {
-                const slideDiv = document.createElement('div');
-                slideDiv.className = 'slide-item';
-                slideDiv.innerHTML = `
-                    <h3>${slide.title || '无标题'}</h3>
-                    <p><strong>副标题:</strong> ${slide.subtitle || '无'}</p>
-                    <p><strong>内容:</strong> ${slide.content || '无'}</p>
-                    <p><strong>背景色:</strong> <span style="display: inline-block; width: 20px; height: 20px; background: ${slide.backgroundColor}; border: 1px solid #ddd; vertical-align: middle;"></span> ${slide.backgroundColor}</p>
-                    <p><strong>显示时长:</strong> ${slide.duration || 5}秒</p>
-                    ${slide.image ? `<p><strong>背景图:</strong> 已设置</p>` : ''}
-                    <div class="slide-actions">
-                        <button class="btn btn-primary" onclick="editSlide(${index})">编辑</button>
-                        <button class="btn btn-danger" onclick="deleteSlide(${index})">删除</button>
-                        ${index > 0 ? `<button class="btn btn-secondary" onclick="moveSlide(${index}, -1)">上移</button>` : ''}
-                        ${index < contentData.slides.length - 1 ? `<button class="btn btn-secondary" onclick="moveSlide(${index}, 1)">下移</button>` : ''}
+
+            contentData.products.forEach((product, index) => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-item';
+
+                const imageMarkup = product.image
+                    ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}">`
+                    : '<div class="product-placeholder">奶茶图片</div>';
+
+                productCard.innerHTML = `
+                    <div class="product-image">
+                        ${imageMarkup}
+                        <div class="product-price-badge">${escapeHtml(formatPrice(product.price))}</div>
+                    </div>
+                    <div class="product-body">
+                        <div class="product-meta">
+                            <span class="product-category">${escapeHtml(product.category || '奶茶')}</span>
+                            <span class="product-status ${product.enabled === false ? 'offline' : ''}">
+                                ${product.enabled === false ? '已下架' : '已上架'}
+                            </span>
+                        </div>
+                        <h3>${escapeHtml(product.name || '未命名商品')}</h3>
+                        <p>${escapeHtml(product.description || '暂无商品描述')}</p>
+                        ${product.badge ? `<div class="product-badge">${escapeHtml(product.badge)}</div>` : ''}
+                        <div class="product-actions">
+                            <button class="btn btn-primary" onclick="editProduct(${index})">编辑</button>
+                            <button class="btn btn-danger" onclick="deleteProduct(${index})">删除</button>
+                            ${index > 0 ? `<button class="btn btn-secondary" onclick="moveProduct(${index}, -1)">上移</button>` : ''}
+                            ${index < contentData.products.length - 1 ? `<button class="btn btn-secondary" onclick="moveProduct(${index}, 1)">下移</button>` : ''}
+                        </div>
                     </div>
                 `;
-                container.appendChild(slideDiv);
+
+                container.appendChild(productCard);
             });
         }
 
-        // 打开添加幻灯片模态框
+        function renderSlides() {
+            const container = document.getElementById('slide-list');
+            container.innerHTML = '';
+
+            if (!contentData.slides.length) {
+                container.innerHTML = '<div class="empty-state">还没有宣传轮播，点击“新增宣传轮播”可添加活动或欢迎页面。</div>';
+                return;
+            }
+
+            contentData.slides.forEach((slide, index) => {
+                const slideCard = document.createElement('div');
+                slideCard.className = 'slide-item';
+                slideCard.innerHTML = `
+                    <div class="slide-body">
+                        <h3>${escapeHtml(slide.title || '未命名轮播')}</h3>
+                        <p><strong>副标题：</strong>${escapeHtml(slide.subtitle || '无')}</p>
+                        <p><strong>内容：</strong>${escapeHtml(slide.content || '无')}</p>
+                        <p><strong>背景色：</strong>${escapeHtml(slide.backgroundColor || '#8D5B32')}</p>
+                        <p><strong>显示时长：</strong>${escapeHtml(slide.duration || 5)} 秒</p>
+                        <p><strong>背景图：</strong>${slide.image ? '已设置' : '未设置'}</p>
+                        <div class="slide-actions">
+                            <button class="btn btn-primary" onclick="editSlide(${index})">编辑</button>
+                            <button class="btn btn-danger" onclick="deleteSlide(${index})">删除</button>
+                            ${index > 0 ? `<button class="btn btn-secondary" onclick="moveSlide(${index}, -1)">上移</button>` : ''}
+                            ${index < contentData.slides.length - 1 ? `<button class="btn btn-secondary" onclick="moveSlide(${index}, 1)">下移</button>` : ''}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(slideCard);
+            });
+        }
+
+        function openAddProductModal() {
+            currentEditingProduct = null;
+            document.getElementById('product-modal-title').textContent = '新增奶茶商品';
+            document.getElementById('product-form').reset();
+            document.getElementById('product-id').value = '';
+            document.getElementById('product-image').value = '';
+            document.getElementById('product-enabled').checked = true;
+            hidePreview('product-image-preview');
+            document.getElementById('product-modal').classList.add('active');
+        }
+
+        function editProduct(index) {
+            currentEditingProduct = index;
+            const product = contentData.products[index];
+
+            document.getElementById('product-modal-title').textContent = '编辑奶茶商品';
+            document.getElementById('product-id').value = product.id || '';
+            document.getElementById('product-name').value = product.name || '';
+            document.getElementById('product-price').value = product.price || '';
+            document.getElementById('product-category').value = product.category || '';
+            document.getElementById('product-badge').value = product.badge || '';
+            document.getElementById('product-description').value = product.description || '';
+            document.getElementById('product-image').value = product.image || '';
+            document.getElementById('product-enabled').checked = product.enabled !== false;
+            setPreview('product-image-preview', product.image || '');
+            document.getElementById('product-modal').classList.add('active');
+        }
+
+        function saveProduct() {
+            const name = document.getElementById('product-name').value.trim();
+            const price = document.getElementById('product-price').value.trim();
+
+            if (!name) {
+                showMessage('商品名称不能为空', 'error');
+                return;
+            }
+
+            if (!price) {
+                showMessage('商品价格不能为空', 'error');
+                return;
+            }
+
+            const productData = {
+                id: document.getElementById('product-id').value || `product-${Date.now()}`,
+                name,
+                price,
+                category: document.getElementById('product-category').value.trim(),
+                badge: document.getElementById('product-badge').value.trim(),
+                description: document.getElementById('product-description').value.trim(),
+                image: document.getElementById('product-image').value.trim(),
+                enabled: document.getElementById('product-enabled').checked
+            };
+
+            if (currentEditingProduct !== null) {
+                contentData.products[currentEditingProduct] = productData;
+            } else {
+                contentData.products.push(productData);
+            }
+
+            renderProducts();
+            closeProductModal();
+            showMessage('商品已更新，请点击“保存全部内容”同步到展示屏', 'success');
+        }
+
+        function deleteProduct(index) {
+            if (!confirm('确定要删除这个奶茶商品吗？')) {
+                return;
+            }
+
+            contentData.products.splice(index, 1);
+            renderProducts();
+            showMessage('商品已删除，请点击“保存全部内容”同步到展示屏', 'success');
+        }
+
+        function moveProduct(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= contentData.products.length) {
+                return;
+            }
+
+            [contentData.products[index], contentData.products[newIndex]] = [contentData.products[newIndex], contentData.products[index]];
+            renderProducts();
+            showMessage('商品顺序已调整，请点击“保存全部内容”同步到展示屏', 'success');
+        }
+
+        function closeProductModal() {
+            document.getElementById('product-modal').classList.remove('active');
+        }
+
         function openAddSlideModal() {
             currentEditingSlide = null;
-            document.getElementById('modal-title').textContent = '添加幻灯片';
+            document.getElementById('slide-modal-title').textContent = '新增宣传轮播';
             document.getElementById('slide-form').reset();
             document.getElementById('slide-id').value = '';
-            document.getElementById('slide-color').value = '#FF6B9D';
-            document.getElementById('slide-color-text').value = '#FF6B9D';
-            document.getElementById('image-preview').style.display = 'none';
+            document.getElementById('slide-color').value = '#8D5B32';
+            document.getElementById('slide-color-text').value = '#8D5B32';
+            document.getElementById('slide-duration').value = 5;
+            document.getElementById('slide-image').value = '';
+            hidePreview('slide-image-preview');
             document.getElementById('slide-modal').classList.add('active');
         }
 
-        // 编辑幻灯片
         function editSlide(index) {
             currentEditingSlide = index;
             const slide = contentData.slides[index];
-            
-            document.getElementById('modal-title').textContent = '编辑幻灯片';
-            document.getElementById('slide-id').value = slide.id;
+
+            document.getElementById('slide-modal-title').textContent = '编辑宣传轮播';
+            document.getElementById('slide-id').value = slide.id || '';
             document.getElementById('slide-title').value = slide.title || '';
             document.getElementById('slide-subtitle').value = slide.subtitle || '';
             document.getElementById('slide-content').value = slide.content || '';
-            document.getElementById('slide-color').value = slide.backgroundColor || '#FF6B9D';
-            document.getElementById('slide-color-text').value = slide.backgroundColor || '#FF6B9D';
-            document.getElementById('slide-image').value = slide.image || '';
+            document.getElementById('slide-color').value = slide.backgroundColor || '#8D5B32';
+            document.getElementById('slide-color-text').value = slide.backgroundColor || '#8D5B32';
             document.getElementById('slide-duration').value = slide.duration || 5;
-            
-            if (slide.image) {
-                document.getElementById('image-preview').src = slide.image;
-                document.getElementById('image-preview').style.display = 'block';
-            } else {
-                document.getElementById('image-preview').style.display = 'none';
-            }
-            
+            document.getElementById('slide-image').value = slide.image || '';
+            setPreview('slide-image-preview', slide.image || '');
             document.getElementById('slide-modal').classList.add('active');
         }
 
-        // 保存幻灯片
-        async function saveSlide() {
+        function saveSlide() {
+            const title = document.getElementById('slide-title').value.trim();
+
+            if (!title) {
+                showMessage('轮播主标题不能为空', 'error');
+                return;
+            }
+
             const slideData = {
                 id: document.getElementById('slide-id').value || Date.now(),
-                title: document.getElementById('slide-title').value,
-                subtitle: document.getElementById('slide-subtitle').value,
-                content: document.getElementById('slide-content').value,
-                backgroundColor: document.getElementById('slide-color').value,
-                image: document.getElementById('slide-image').value,
-                duration: parseInt(document.getElementById('slide-duration').value)
+                title,
+                subtitle: document.getElementById('slide-subtitle').value.trim(),
+                content: document.getElementById('slide-content').value.trim(),
+                backgroundColor: document.getElementById('slide-color').value || '#8D5B32',
+                image: document.getElementById('slide-image').value.trim(),
+                duration: parseInt(document.getElementById('slide-duration').value, 10) || 5
             };
-            
+
             if (currentEditingSlide !== null) {
                 contentData.slides[currentEditingSlide] = slideData;
             } else {
                 contentData.slides.push(slideData);
             }
-            
+
             renderSlides();
             closeSlideModal();
-            showMessage('幻灯片已更新，请点击"保存所有更改"按钮保存', 'success');
+            showMessage('宣传轮播已更新，请点击“保存全部内容”同步到展示屏', 'success');
         }
 
-        // 删除幻灯片
         function deleteSlide(index) {
-            if (confirm('确定要删除这个幻灯片吗？')) {
-                contentData.slides.splice(index, 1);
-                renderSlides();
-                showMessage('幻灯片已删除，请点击"保存所有更改"按钮保存', 'success');
+            if (!confirm('确定要删除这个宣传轮播吗？')) {
+                return;
             }
+
+            contentData.slides.splice(index, 1);
+            renderSlides();
+            showMessage('宣传轮播已删除，请点击“保存全部内容”同步到展示屏', 'success');
         }
 
-        // 移动幻灯片
         function moveSlide(index, direction) {
             const newIndex = index + direction;
-            if (newIndex >= 0 && newIndex < contentData.slides.length) {
-                [contentData.slides[index], contentData.slides[newIndex]] = 
-                [contentData.slides[newIndex], contentData.slides[index]];
-                renderSlides();
-                showMessage('幻灯片已移动，请点击"保存所有更改"按钮保存', 'success');
+            if (newIndex < 0 || newIndex >= contentData.slides.length) {
+                return;
+            }
+
+            [contentData.slides[index], contentData.slides[newIndex]] = [contentData.slides[newIndex], contentData.slides[index]];
+            renderSlides();
+            showMessage('宣传轮播顺序已调整，请点击“保存全部内容”同步到展示屏', 'success');
+        }
+
+        function closeSlideModal() {
+            document.getElementById('slide-modal').classList.remove('active');
+        }
+
+        async function uploadImage(input, hiddenInputId, previewId) {
+            if (!input.files || !input.files[0]) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+
+            try {
+                showLoading();
+                const response = await fetch('/api/admin/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.message || '上传失败');
+                }
+
+                document.getElementById(hiddenInputId).value = result.url;
+                setPreview(previewId, result.url);
+            } catch (error) {
+                alert('图片上传失败: ' + error.message);
+            } finally {
+                hideLoading();
+                input.value = '';
             }
         }
 
-        // 保存所有内容
+        function setPreview(previewId, imageUrl) {
+            const preview = document.getElementById(previewId);
+            if (!imageUrl) {
+                hidePreview(previewId);
+                return;
+            }
+
+            preview.src = imageUrl;
+            preview.style.display = 'block';
+        }
+
+        function hidePreview(previewId) {
+            const preview = document.getElementById(previewId);
+            preview.removeAttribute('src');
+            preview.style.display = 'none';
+        }
+
         async function saveAllContent() {
             try {
                 showLoading();
@@ -665,155 +1181,124 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(contentData)
                 });
-                
+
                 const result = await response.json();
-                hideLoading();
-                
                 if (result.success) {
-                    showMessage('保存成功！', 'success');
+                    showMessage('保存成功，展示页会读取最新商品和价格', 'success');
                 } else {
                     showMessage('保存失败: ' + result.message, 'error');
                 }
             } catch (error) {
-                hideLoading();
                 showMessage('保存失败: ' + error.message, 'error');
+            } finally {
+                hideLoading();
             }
         }
 
-        // 预览图片
-        async function previewImage(input) {
-            if (input.files && input.files[0]) {
-                const formData = new FormData();
-                formData.append('file', input.files[0]);
-                
-                try {
-                    showLoading();
-                    const response = await fetch('/api/admin/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const result = await response.json();
-                    hideLoading();
-                    
-                    if (result.success) {
-                        document.getElementById('slide-image').value = result.url;
-                        document.getElementById('image-preview').src = result.url;
-                        document.getElementById('image-preview').style.display = 'block';
-                    } else {
-                        alert('上传失败: ' + result.message);
-                    }
-                } catch (error) {
-                    hideLoading();
-                    alert('上传失败: ' + error.message);
-                }
-            }
-        }
-
-        // 关闭幻灯片模态框
-        function closeSlideModal() {
-            document.getElementById('slide-modal').classList.remove('active');
-        }
-
-        // 预览展示
         function previewDisplay() {
             window.open('/display', '_blank');
         }
 
-        // 加载WiFi状态
         async function loadWiFiStatus() {
             try {
                 const response = await fetch('/api/wifi/status');
                 const result = await response.json();
-                
-                if (result.success) {
-                    const status = result.data;
-                    const statusDiv = document.getElementById('wifi-status');
-                    
-                    if (status.connected) {
-                        statusDiv.innerHTML = `
-                            <p style="color: #28a745; font-weight: bold;">✓ 已连接</p>
-                            <p>网络名称: ${status.ssid}</p>
-                        `;
-                    } else if (status.ap_mode) {
-                        statusDiv.innerHTML = `
-                            <p style="color: #ffc107; font-weight: bold;">⚠ AP模式</p>
-                            <p>请连接到WiFi网络</p>
-                        `;
-                    } else {
-                        statusDiv.innerHTML = `
-                            <p style="color: #dc3545; font-weight: bold;">✗ 未连接</p>
-                        `;
-                    }
+
+                if (!result.success) {
+                    return;
+                }
+
+                const status = result.data;
+                const statusDiv = document.getElementById('wifi-status');
+
+                if (status.connected) {
+                    statusDiv.innerHTML = `
+                        <strong style="display:block; margin-bottom: 8px; color: var(--success);">已连接</strong>
+                        <div>网络名称：${escapeHtml(status.ssid || '未知网络')}</div>
+                    `;
+                } else if (status.ap_mode) {
+                    statusDiv.innerHTML = `
+                        <strong style="display:block; margin-bottom: 8px; color: #a66a09;">AP模式</strong>
+                        <div>当前等待连接门店WiFi</div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <strong style="display:block; margin-bottom: 8px; color: var(--danger);">未连接</strong>
+                        <div>请扫描并连接可用的WiFi网络</div>
+                    `;
                 }
             } catch (error) {
                 console.error('加载WiFi状态失败:', error);
             }
         }
 
-        // 扫描WiFi
         async function scanWiFi() {
             try {
                 showLoading();
                 const response = await fetch('/api/wifi/scan');
                 const result = await response.json();
-                hideLoading();
-                
+
                 if (result.success) {
-                    renderWiFiNetworks(result.data);
+                    renderWiFiNetworks(Array.isArray(result.data) ? result.data : []);
                 } else {
-                    showWiFiMessage('扫描失败', 'error');
+                    showWiFiMessage('扫描失败: ' + (result.message || '未知错误'), 'error');
                 }
             } catch (error) {
-                hideLoading();
                 showWiFiMessage('扫描失败: ' + error.message, 'error');
+            } finally {
+                hideLoading();
             }
         }
 
-        // 渲染WiFi网络列表
         function renderWiFiNetworks(networks) {
             const container = document.getElementById('wifi-networks');
-            container.innerHTML = '<h3>可用网络</h3>';
-            
-            if (networks.length === 0) {
-                container.innerHTML += '<p style="text-align: center; color: #999; padding: 20px;">未找到可用网络</p>';
+            container.innerHTML = '';
+
+            if (!networks.length) {
+                container.innerHTML = '<div class="empty-state">未找到可用网络，请稍后重试。</div>';
                 return;
             }
-            
-            networks.forEach(network => {
-                const signalClass = network.signal > 70 ? 'signal-strong' : 
-                                   network.signal > 40 ? 'signal-medium' : 'signal-weak';
-                
-                const networkDiv = document.createElement('div');
-                networkDiv.className = 'wifi-network';
-                networkDiv.innerHTML = `
+
+            networks.forEach((network) => {
+                const signalValue = Number(network.signal || 0);
+                const signalClass = signalValue > 70 ? 'signal-strong' : signalValue > 40 ? 'signal-medium' : 'signal-weak';
+
+                const networkCard = document.createElement('div');
+                networkCard.className = 'wifi-network';
+                networkCard.innerHTML = `
                     <div class="wifi-info">
-                        <h4>${network.ssid} <span class="${signalClass} signal-strength">${network.signal}%</span></h4>
-                        <p>${network.security}</p>
+                        <h4>
+                            ${escapeHtml(network.ssid || '未知网络')}
+                            <span class="signal-strength ${signalClass}">${escapeHtml(signalValue)}%</span>
+                        </h4>
+                        <p>${escapeHtml(network.security || '未知加密方式')}</p>
                     </div>
-                    <button class="btn btn-primary" onclick="openWiFiModal('${network.ssid}')">连接</button>
                 `;
-                container.appendChild(networkDiv);
+
+                const actionButton = document.createElement('button');
+                actionButton.className = 'btn btn-primary';
+                actionButton.textContent = '连接';
+                actionButton.addEventListener('click', () => openWiFiModal(network.ssid || ''));
+
+                networkCard.appendChild(actionButton);
+                container.appendChild(networkCard);
             });
         }
 
-        // 打开WiFi连接模态框
         function openWiFiModal(ssid) {
             document.getElementById('wifi-ssid').value = ssid;
             document.getElementById('wifi-password').value = '';
             document.getElementById('wifi-modal').classList.add('active');
         }
 
-        // 关闭WiFi模态框
         function closeWiFiModal() {
             document.getElementById('wifi-modal').classList.remove('active');
         }
 
-        // 连接WiFi
         async function connectWiFi() {
             const ssid = document.getElementById('wifi-ssid').value;
             const password = document.getElementById('wifi-password').value;
-            
+
             try {
                 showLoading();
                 const response = await fetch('/api/wifi/connect', {
@@ -821,69 +1306,63 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ssid, password })
                 });
-                
+
                 const result = await response.json();
-                hideLoading();
-                closeWiFiModal();
-                
                 if (result.success) {
-                    showWiFiMessage('连接成功！', 'success');
-                    setTimeout(() => loadWiFiStatus(), 2000);
+                    showWiFiMessage('连接成功', 'success');
+                    closeWiFiModal();
+                    setTimeout(() => loadWiFiStatus(), 1200);
                 } else {
                     showWiFiMessage('连接失败: ' + result.message, 'error');
                 }
             } catch (error) {
-                hideLoading();
-                closeWiFiModal();
                 showWiFiMessage('连接失败: ' + error.message, 'error');
+            } finally {
+                hideLoading();
             }
         }
 
-        // 加载设置
         function loadSettings() {
-            if (contentData.settings) {
-                document.getElementById('default-duration').value = contentData.settings.defaultDuration || 5;
-                document.getElementById('auto-play').checked = contentData.settings.autoPlay !== false;
-            }
+            const settings = contentData.settings || {};
+            document.getElementById('menu-title').value = settings.menuTitle || '本店热卖奶茶';
+            document.getElementById('menu-subtitle').value = settings.menuSubtitle || '支持少糖 / 去冰 / 加料定制';
+            document.getElementById('products-per-page').value = settings.productsPerPage || 6;
+            document.getElementById('default-duration').value = settings.defaultDuration || 5;
+            document.getElementById('auto-play').checked = settings.autoPlay !== false;
         }
 
-        // 保存设置
         function saveSettings() {
             contentData.settings = {
-                defaultDuration: parseInt(document.getElementById('default-duration').value),
+                ...contentData.settings,
+                menuTitle: document.getElementById('menu-title').value.trim(),
+                menuSubtitle: document.getElementById('menu-subtitle').value.trim(),
+                productsPerPage: parseInt(document.getElementById('products-per-page').value, 10) || 6,
+                defaultDuration: parseInt(document.getElementById('default-duration').value, 10) || 5,
                 autoPlay: document.getElementById('auto-play').checked,
                 transition: 'fade'
             };
-            
+
             saveAllContent();
         }
 
-        // 显示消息
         function showMessage(text, type) {
             const messageDiv = document.getElementById('message');
             messageDiv.textContent = text;
-            messageDiv.className = 'message ' + type + ' active';
-            setTimeout(() => {
-                messageDiv.classList.remove('active');
-            }, 5000);
+            messageDiv.className = `message ${type} active`;
+            setTimeout(() => messageDiv.classList.remove('active'), 5000);
         }
 
-        // 显示WiFi消息
         function showWiFiMessage(text, type) {
             const messageDiv = document.getElementById('wifi-message');
             messageDiv.textContent = text;
-            messageDiv.className = 'message ' + type + ' active';
-            setTimeout(() => {
-                messageDiv.classList.remove('active');
-            }, 5000);
+            messageDiv.className = `message ${type} active`;
+            setTimeout(() => messageDiv.classList.remove('active'), 5000);
         }
 
-        // 显示加载
         function showLoading() {
             document.getElementById('loading-overlay').classList.add('active');
         }
 
-        // 隐藏加载
         function hideLoading() {
             document.getElementById('loading-overlay').classList.remove('active');
         }
