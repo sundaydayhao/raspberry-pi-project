@@ -64,7 +64,7 @@ sudo apt-get install -y \
     python3 \
     python3-pip \
     python3-venv \
-    chromium-browser \
+    chromium \
     x11-xserver-utils \
     network-manager \
     unclutter \
@@ -337,7 +337,7 @@ ps aux | grep X
 
 3. 手动启动浏览器测试：
 ```bash
-DISPLAY=:0 chromium-browser --kiosk http://localhost:5000/display
+DISPLAY=:0 chromium --kiosk http://localhost:5000/display
 ```
 
 ### 显示器无信号

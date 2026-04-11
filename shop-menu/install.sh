@@ -34,6 +34,22 @@ run_as_install_user() {
     fi
 }
 
+detect_browser_package() {
+    local pkg
+    local policy
+
+    for pkg in chromium chromium-browser; do
+        policy="$(apt-cache policy "$pkg" 2>/dev/null || true)"
+        if printf '%s\n' "$policy" | grep -q "Candidate:" && \
+           ! printf '%s\n' "$policy" | grep -q "Candidate: (none)"; then
+            echo "$pkg"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 echo "步骤 1/6: 更新系统包..."
 apt-get update
 
@@ -43,11 +59,22 @@ apt-get install -y python3 python3-pip python3-venv
 
 echo ""
 echo "步骤 3/6: 安装系统依赖..."
-apt-get install -y \
-    chromium-browser \
-    x11-xserver-utils \
-    network-manager \
-    unclutter
+BROWSER_PACKAGE="$(detect_browser_package)"
+if [ -n "$BROWSER_PACKAGE" ]; then
+    echo "检测到浏览器软件包: $BROWSER_PACKAGE"
+    apt-get install -y \
+        "$BROWSER_PACKAGE" \
+        x11-xserver-utils \
+        network-manager \
+        unclutter
+else
+    echo "警告: 未找到可用的 Chromium 软件包，跳过浏览器安装"
+    echo "请手动安装 chromium 或 chromium-browser"
+    apt-get install -y \
+        x11-xserver-utils \
+        network-manager \
+        unclutter
+fi
 
 echo ""
 echo "步骤 4/6: 安装Python依赖..."

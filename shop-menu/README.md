@@ -35,7 +35,8 @@
 sudo apt update && sudo apt upgrade -y
 
 # 安装必要的软件包
-sudo apt install -y python3-pip python3-venv chromium-browser unclutter
+# Raspberry Pi OS Bookworm 通常使用 chromium；较旧系统可能仍是 chromium-browser
+sudo apt install -y python3-pip python3-venv chromium unclutter
 
 # 安装WiFi工具（如果需要）
 sudo apt install -y wireless-tools wpasupplicant
@@ -264,7 +265,7 @@ sudo journalctl -u wpa_supplicant -f
 cat ~/.config/lxsession/LXDE-pi/autostart
 
 # 手动测试浏览器启动
-chromium-browser --kiosk http://localhost:5000
+chromium --kiosk http://localhost:5000
 ```
 
 ### 无法访问管理后台

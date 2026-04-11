@@ -7,6 +7,20 @@ VENV_DIR="$SCRIPT_DIR/venv"
 PYTHON_BIN="$VENV_DIR/bin/python3"
 cd "$SCRIPT_DIR"
 
+find_browser_command() {
+    if command -v chromium-browser &> /dev/null; then
+        echo "chromium-browser"
+        return 0
+    fi
+
+    if command -v chromium &> /dev/null; then
+        echo "chromium"
+        return 0
+    fi
+
+    return 1
+}
+
 echo "========================================="
 echo "  奶茶店展示系统启动中..."
 echo "========================================="
@@ -83,17 +97,22 @@ if [ -f /proc/device-tree/model ]; then
         xset s off
         xset -dpms
         xset s noblank
-        
-        # 启动Chromium浏览器全屏模式
-        echo "启动全屏展示..."
-        chromium-browser --kiosk --incognito --disable-infobars \
-            --disable-session-crashed-bubble \
-            --disable-restore-session-state \
-            --noerrdialogs \
-            http://localhost:5000/display &
-        
-        BROWSER_PID=$!
-        echo "浏览器PID: $BROWSER_PID"
+
+        BROWSER_BIN="$(find_browser_command)"
+        if [ -n "$BROWSER_BIN" ]; then
+            # 启动Chromium浏览器全屏模式
+            echo "启动全屏展示..."
+            "$BROWSER_BIN" --kiosk --incognito --disable-infobars \
+                --disable-session-crashed-bubble \
+                --disable-restore-session-state \
+                --noerrdialogs \
+                http://localhost:5000/display &
+
+            BROWSER_PID=$!
+            echo "浏览器PID: $BROWSER_PID"
+        else
+            echo "警告: 未找到 Chromium 浏览器，跳过全屏展示启动"
+        fi
     fi
 fi
 
