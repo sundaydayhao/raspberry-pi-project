@@ -146,6 +146,175 @@ sudo apt install -y python3-picamera2
 
 后面用 `Picamera2` 抓帧，再把图像帧喂给 YOLO 即可。
 
+### 4.5 在树莓派 3B+ 上运行 NCNN 模型
+
+如果你已经导出了 NCNN 模型目录，例如：
+
+```text
+yolo26n_ncnn_model/
+├── model.bin
+├── model.param
+└── metadata.yaml
+```
+
+最推荐的运行方式，不是直接手写 `ncnn` 后处理，而是先用 `Ultralytics` 直接加载这个目录。  
+官方 NCNN 文档明确支持这种方式，`YOLO("./yolo26n_ncnn_model")` 会自动处理前处理、后处理和画框逻辑。
+
+#### 方案 A：最稳的摄像头实时识别
+
+```python
+from ultralytics import YOLO
+import cv2
+
+model = YOLO("/home/pi/yolo/yolo26n_ncnn_model")
+
+cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
+while True:
+    ok, frame = cap.read()
+    if not ok:
+        break
+
+    results = model(frame, imgsz=320, verbose=False)
+    annotated = results[0].plot()
+
+    cv2.imshow("YOLO NCNN", annotated)
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+```
+
+这条路线更适合树莓派 3B+，因为：
+
+- 不用自己解析 `output0`
+- 不用自己写 NMS
+- 不容易因为 blob 名称不一致而报错
+
+如果你是通过 SSH 登录树莓派，没有桌面环境，`cv2.imshow()` 可能会失败。  
+这种情况下可以把 `imshow` 改成定时保存图片，或者只打印检测结果。
+
+#### 方案 B：原生 `ncnn` Python API 最小示例
+
+你贴的代码整体方向是对的，但有几个点要改：
+
+- Ultralytics 导出的默认文件名通常是 `model.param` 和 `model.bin`，不一定是 `yolov8n.ncnn.param`
+- 模型通常期望 `RGB` 输入，建议从 OpenCV 的 `BGR` 转成 `RGB`
+- `ex.extract("output0", out)` 只拿到了原始输出，还没有做框解码和 NMS
+- 所以你当前代码只能证明“模型跑起来了”，还不能真正画检测框
+
+下面这版可以作为“NCNN 推理链路自检”示例：
+
+```python
+import cv2
+import ncnn
+
+param_path = "/home/pi/yolo/yolo26n_ncnn_model/model.param"
+bin_path = "/home/pi/yolo/yolo26n_ncnn_model/model.bin"
+
+net = ncnn.Net()
+net.opt.use_vulkan_compute = False
+net.opt.num_threads = 4
+net.load_param(param_path)
+net.load_model(bin_path)
+
+cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
+while True:
+    ok, frame = cap.read()
+    if not ok:
+        break
+
+    h, w = frame.shape[:2]
+    mat = ncnn.Mat.from_pixels_resize(
+        frame,
+        ncnn.Mat.PixelType.PIXEL_BGR2RGB,
+        w,
+        h,
+        320,
+        320,
+    )
+    mat.substract_mean_normalize([0.0, 0.0, 0.0], [1 / 255.0, 1 / 255.0, 1 / 255.0])
+
+    ex = net.create_extractor()
+    ex.input("in0", mat)   # 这里的输入名要以你自己的模型为准
+    ret, out = ex.extract("out0")  # 输出名同样要按模型实际 blob 名称修改
+
+    text = f"NCNN ok, ret={ret}, out=({out.w},{out.h},{out.c})"
+    cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    cv2.imshow("NCNN Smoke Test", frame)
+
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+```
+
+这段代码的重点是确认：
+
+- 摄像头能正常读帧
+- NCNN 模型能正常加载
+- 输入输出 blob 能对上
+
+但它还不是完整检测程序。
+
+#### 方案 C：为什么你当前代码还画不出真实框
+
+你现在这段代码：
+
+```python
+ex.input("images", mat)
+ex.extract("output0", out)
+```
+
+常见问题有三个：
+
+1. `images` 和 `output0` 不一定是你导出模型里的真实 blob 名称。  
+   不同导出方式里名字可能是 `in0`、`out0`，也可能是别的。最稳的办法是用 `Netron` 打开 `model.param` 检查。
+
+2. `out` 只是原始张量，不是最终框。  
+   要想真正画框，还需要：
+   - 解析每个候选框
+   - 按类别取最大分数
+   - 换算回原图坐标
+   - 执行 NMS 去重
+
+3. 你的 `class_names` 只写了 7 个类。  
+   如果你跑的是 COCO 模型，标准类别数是 80 个。
+
+所以如果目标是“尽快在树莓派 3B+ 上跑起来”，更推荐先走方案 A。
+
+#### 方案 D：树莓派 3B+ 上的实用参数
+
+树莓派 3B+ 资源比较紧张，建议这样调：
+
+- 模型：优先 `yolo11n`、`yolo26n`、`yolov8n`
+- 输入尺寸：先试 `imgsz=320`
+- 摄像头分辨率：先设成 `640x480`
+- 推理频率：必要时隔帧推理
+- 显示方式：无桌面时不要依赖 `cv2.imshow()`
+
+如果你只想先验证速度，可以先每 2 到 3 帧推理一次。
+
+```python
+frame_id = 0
+
+while True:
+    ok, frame = cap.read()
+    if not ok:
+        break
+
+    frame_id += 1
+    if frame_id % 3 != 0:
+        continue
+```
+
 ## 5. 为什么 `pip install ultralytics` 会报 `externally-managed-environment`
 
 在 Raspberry Pi OS Bookworm 之后，系统 Python 默认受到 PEP 668 保护。
@@ -330,4 +499,3 @@ python -c "from ultralytics import YOLO; model = YOLO('/home/pi/yolo/yolo11n_ncn
 - pip 配置文档: https://pip.pypa.io/en/stable/topics/configuration/
 - pip install 行为: https://pip.pypa.io/en/stable/cli/pip_install/
 - piwheels: https://www.piwheels.org/
-
